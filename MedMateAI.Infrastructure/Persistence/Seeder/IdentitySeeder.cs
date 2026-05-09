@@ -17,7 +17,7 @@ public static class IdentitySeeder
         
         await db.Database.MigrateAsync(cancellationToken);
 
-        var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
+        var roleManager = sp.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
       
 
@@ -26,7 +26,7 @@ public static class IdentitySeeder
         {
             if (!await roleManager.RoleExistsAsync(role))
             {
-                await roleManager.CreateAsync(new IdentityRole(role));
+                await roleManager.CreateAsync(new IdentityRole<Guid>(role));
             }
         }
 

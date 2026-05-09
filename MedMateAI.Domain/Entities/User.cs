@@ -4,7 +4,7 @@ namespace MedMateAI.Domain.Entities;
 
 public sealed class User
 {
-    public string IdentityId { get; set; } = string.Empty;
+    public Guid IdentityId { get; set; }
 
     public string Email { get; set; } = string.Empty;
 

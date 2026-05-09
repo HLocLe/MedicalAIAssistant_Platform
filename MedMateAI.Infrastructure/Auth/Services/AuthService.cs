@@ -14,7 +14,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace MedMateAI.Infrastructure.Auth.Services;
 
-public sealed class IdentityService : IAuthService
+public sealed class AuthService : IAuthService
 {
     private static readonly TimeSpan PasswordResetOtpLifetime = TimeSpan.FromMinutes(1);
 
@@ -26,7 +26,7 @@ public sealed class IdentityService : IAuthService
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _configuration;
 
-    public IdentityService(
+    public AuthService(
         UserManager<ApplicationUser> userManager,
         IJwtTokenGenerator jwtTokenGenerator,
         IMemoryCache cache,
@@ -118,7 +118,7 @@ public sealed class IdentityService : IAuthService
         var roles = await _userManager.GetRolesAsync(user);
 
         var (token, expires) = _jwtTokenGenerator.CreateAccessToken(
-            user.Id,
+            user.Id.ToString(),
             user.Email ?? string.Empty,
             user.DisplayName,
             roles.ToArray());
@@ -234,7 +234,7 @@ public sealed class IdentityService : IAuthService
         var roles = await _userManager.GetRolesAsync(user);
 
         var (token, expires) = _jwtTokenGenerator.CreateAccessToken(
-            user.Id,
+            user.Id.ToString(),
             user.Email ?? string.Empty,
             user.DisplayName,
             roles.ToArray());
@@ -317,7 +317,7 @@ public sealed class IdentityService : IAuthService
         var roles = await _userManager.GetRolesAsync(user);
 
         var (accessToken, accessExpires) = _jwtTokenGenerator.CreateAccessToken(
-            user.Id,
+            user.Id.ToString(),
             user.Email ?? string.Empty,
             user.DisplayName,
             roles.ToArray());
@@ -437,3 +437,4 @@ public sealed class IdentityService : IAuthService
         public required string ResetToken { get; init; }
     }
 }
+

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MedMateAI.Infrastructure;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 

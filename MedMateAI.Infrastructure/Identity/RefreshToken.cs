@@ -6,7 +6,7 @@ public sealed class RefreshToken
 
     public string Token { get; set; } = string.Empty;
 
-    public string UserId { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
 
     public DateTime ExpiresAt { get; set; }
 
