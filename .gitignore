@@ -1,0 +1,13 @@
+# Build outputs
+**/bin/
+**/obj/
+
+# User secrets / local settings
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings.*.json
+
+# IDE
+**/.vs/
+**/.idea/
+
