@@ -161,6 +161,7 @@ public sealed class AuthService : IAuthService
             AccessToken = token,
             Email = user.Email ?? string.Empty,
             UserId = user.Id,
+            Roles = roles.ToArray(),
             ExpiresAtUtc = expires,
         });
     }
