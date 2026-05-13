@@ -7,6 +7,7 @@ using MedMateAI.Domain.Repository;
 using MedMateAI.Infrastructure.Auth.Options;
 using MedMateAI.Infrastructure.Auth.Providers;
 using MedMateAI.Infrastructure.Auth.Services;
+using MedMateAI.Infrastructure.Services;
 using MedMateAI.Infrastructure.Mapping;
 using MedMateAI.Infrastructure.Persistence.Seeder;
 using MedMateAI.Infrastructure.Repositories;
@@ -41,12 +42,18 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IMedicalDepartmentService, MedicalDepartmentService>();
         
         //
         services.AddHttpContextAccessor();
 
         //
         services.AddMemoryCache();
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration["Redis:ConnectionString"]
+                ?? throw new InvalidOperationException("Redis connection string is missing.");
+        });
 
         services.AddHttpClient<IEmailOtpSender, BrevoEmailOtpService>(client =>
         {
