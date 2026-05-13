@@ -1,11 +1,10 @@
 using System.Linq.Expressions;
 using MedMateAI.Domain.Common;
-using MedMateAI.Domain.Entities;
 
 namespace MedMateAI.Domain.Repository;
 
 public interface IGenericRepository<TEntity>
-    where TEntity : BaseEntity
+    where TEntity : class
 {
     Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 

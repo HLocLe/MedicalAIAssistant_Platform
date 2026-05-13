@@ -1,10 +1,11 @@
 using System.Security.Claims;
 using AutoMapper;
+using MedMateAI.Application.DTOs.Common;
 using MedMateAI.Application.DTOs.Users.Requests;
-using MedMateAI.Application.DTOs.Users.Responses;
 using MedMateAI.Application.IService;
 using MedMateAI.Domain.Entities;
 using MedMateAI.Domain.Enums;
+using MedMateAI.Domain.Repository;
 using MedMateAI.Infrastructure.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -14,19 +15,20 @@ namespace MedMateAI.Infrastructure.Auth.Services;
 
 public sealed class UserService : IUserService
 {
-    public const int UsersPageSize = 10;
-
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IGenericRepository<ApplicationUser> _userRepository;
     private readonly IMapper _mapper;
 
     public UserService(
         IHttpContextAccessor httpContextAccessor,
         UserManager<ApplicationUser> userManager,
+        IGenericRepository<ApplicationUser> userRepository,
         IMapper mapper)
     {
         _httpContextAccessor = httpContextAccessor;
         _userManager = userManager;
+        _userRepository = userRepository;
         _mapper = mapper;
     }
 
@@ -108,30 +110,25 @@ public sealed class UserService : IUserService
         return roles.ToArray();
     }
 
-    public async Task<PagedUsersResponse> ListUsersAsync(int pageNumber, CancellationToken cancellationToken = default)
+    public async Task<PagedResponse<User>> ListUsersAsync(
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
-        var page = pageNumber < 1 ? 1 : pageNumber;
+        var paged = await _userRepository.GetPagedAsync(
+            pageNumber,
+            pageSize,
+            u => !u.IsDeleted,
+            q => q.OrderBy(u => u.Email),
+            cancellationToken: cancellationToken);
 
-        var query = _userManager.Users
-            .AsNoTracking()
-            .Where(u => !u.IsDeleted)
-            .OrderBy(u => u.Email);
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)UsersPageSize);
-
-        var items = await query
-            .Skip((page - 1) * UsersPageSize)
-            .Take(UsersPageSize)
-            .ToListAsync(cancellationToken);
-
-        return new PagedUsersResponse
+        return new PagedResponse<User>
         {
-            PageNumber = page,
-            PageSize = UsersPageSize,
-            TotalCount = totalCount,
-            TotalPages = totalPages,
-            Items = items.ConvertAll(u => _mapper.Map<User>(u)),
+            PageNumber = paged.PageNumber,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount,
+            TotalPages = paged.TotalPages,
+            Items = paged.Items.Select(u => _mapper.Map<User>(u)).ToList(),
         };
     }
 

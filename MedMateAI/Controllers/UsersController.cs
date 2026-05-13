@@ -2,6 +2,7 @@ using MedMateAI.Application.DTOs.Common;
 using MedMateAI.Application.DTOs.Users.Requests;
 using MedMateAI.Application.DTOs.Users.Responses;
 using MedMateAI.Application.IService;
+using MedMateAI.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -56,11 +57,13 @@ public sealed class UsersController : ControllerBase
     
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<PagedUsersResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> List([FromQuery] int page = 1, CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(ApiResponse<PagedResponse<User>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> List(
+        [FromQuery] PaginationQuery query,
+        CancellationToken cancellationToken = default)
     {
-        var data = await _userService.ListUsersAsync(page, cancellationToken);
-        return Ok(new ApiResponse<PagedUsersResponse>
+        var data = await _userService.ListUsersAsync(query.PageNumber, query.PageSize, cancellationToken);
+        return Ok(new ApiResponse<PagedResponse<User>>
         {
             Success = true,
             Message = "OK",

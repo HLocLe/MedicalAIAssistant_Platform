@@ -1,13 +1,12 @@
 using System.Linq.Expressions;
 using MedMateAI.Domain.Common;
-using MedMateAI.Domain.Entities;
 using MedMateAI.Domain.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedMateAI.Infrastructure.Repositories;
 
 public class GenericRepository<TEntity> : IGenericRepository<TEntity>
-    where TEntity : BaseEntity
+    where TEntity : class
 {
     private readonly DbSet<TEntity> _set;
 
