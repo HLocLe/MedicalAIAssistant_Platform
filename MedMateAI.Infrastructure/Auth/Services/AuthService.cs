@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using MedMateAI.Domain.Enums;
+using Microsoft.AspNetCore.Builder;
 
 namespace MedMateAI.Infrastructure.Auth.Services;
 
@@ -66,7 +67,6 @@ public sealed class AuthService : IAuthService
             Gender = request.Gender,
             DateOfBirth = request.DateOfBirth,
             Status = UserStatus.Confirmed,
-            IsDeleted = false,
         };
 
         var identityResult = await _userManager.CreateAsync(user, request.Password);
@@ -111,7 +111,6 @@ public sealed class AuthService : IAuthService
             Status = UserStatus.Pending,
             Gender = request.Gender,
             DateOfBirth = request.DateOfBirth,
-            IsDeleted = false,
         };
 
         var identityResult = await _userManager.CreateAsync(user, request.Password);
@@ -148,7 +147,7 @@ public sealed class AuthService : IAuthService
             return (false, null);
         }
 
-        if (user.IsDeleted)
+        if (user.Status == UserStatus.Pending)
         {
             return (false, null);
         }
@@ -168,57 +167,10 @@ public sealed class AuthService : IAuthService
 
         await _userManager.ResetAccessFailedCountAsync(user);
 
-        var roles = await _userManager.GetRolesAsync(user);
-
-        var (token, expires) = _jwtTokenGenerator.CreateAccessToken(
-            user.Id.ToString(),
-            user.Email ?? string.Empty,
-            user.DisplayName,
-            roles.ToArray());
-
-        var (refreshToken, refreshExpires) = _jwtTokenGenerator.CreateRefreshToken();
-        var refreshTokenHash = RefreshTokenHasher.Sha256Hex(refreshToken);
-        var utcNow = DateTime.UtcNow;
-
-        _db.RefreshTokens.Add(new RefreshToken
-        {
-            Id = Guid.NewGuid(),
-            Token = refreshTokenHash,
-            UserId = user.Id,
-            ExpiresAt = refreshExpires.UtcDateTime,
-            IsUsed = false,
-            IsRevoked = false,
-            AddedDate = utcNow,
-        });
-
-        await _db.SaveChangesAsync(cancellationToken);
-
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext is not null)
-        {
-            httpContext.Response.Cookies.Append(
-                "refreshToken",
-                refreshToken,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = httpContext.Request.IsHttps,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = refreshExpires,
-                    Path = "/",
-                });
-        }
-
-        return (true, new AuthResponse
-        {
-            AccessToken = token,
-            Email = user.Email ?? string.Empty,
-            UserId = user.Id,
-            Roles = roles.ToArray(),
-            ExpiresAtUtc = expires,
-        });
+       var result=await GenerateAuthResponseAsync(user, cancellationToken);
+       return (true, result);
     }
-    
+
     //
     public async Task<(bool Succeeded, IEnumerable<string> Errors, AuthResponse? Result)> LoginWithGoogleAsync(
         GoogleLoginRequest request,
@@ -269,7 +221,6 @@ public sealed class AuthService : IAuthService
                 EmailConfirmed = true,
                 DisplayName = payload.Name,
                 Status = UserStatus.Confirmed,
-                IsDeleted = false,
             };
 
             var createResult = await _userManager.CreateAsync(user);
@@ -285,60 +236,11 @@ public sealed class AuthService : IAuthService
             }
         }
 
-        if (user.IsDeleted)
-        {
-            return (false, new[] { "Account is no longer active." }, null);
-        }
+    
+        var result=await GenerateAuthResponseAsync(user, cancellationToken);
+        return (true, Array.Empty<string>(), result);
 
-        var roles = await _userManager.GetRolesAsync(user);
 
-        var (token, expires) = _jwtTokenGenerator.CreateAccessToken(
-            user.Id.ToString(),
-            user.Email ?? string.Empty,
-            user.DisplayName,
-            roles.ToArray());
-
-        var (refreshToken, refreshExpires) = _jwtTokenGenerator.CreateRefreshToken();
-        var refreshTokenHash = RefreshTokenHasher.Sha256Hex(refreshToken);
-        var utcNow = DateTime.UtcNow;
-
-        _db.RefreshTokens.Add(new RefreshToken
-        {
-            Id = Guid.NewGuid(),
-            Token = refreshTokenHash,
-            UserId = user.Id,
-            ExpiresAt = refreshExpires.UtcDateTime,
-            IsUsed = false,
-            IsRevoked = false,
-            AddedDate = utcNow,
-        });
-
-        await _db.SaveChangesAsync(cancellationToken);
-
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext is not null)
-        {
-            httpContext.Response.Cookies.Append(
-                "refreshToken",
-                refreshToken,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = httpContext.Request.IsHttps,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = refreshExpires,
-                    Path = "/",
-                });
-        }
-
-        return (true, Array.Empty<string>(), new AuthResponse
-        {
-            AccessToken = token,
-            Email = user.Email ?? string.Empty,
-            UserId = user.Id,
-            Roles = roles.ToArray(),
-            ExpiresAtUtc = expires,
-        });
     }
     
     //
@@ -347,33 +249,36 @@ public sealed class AuthService : IAuthService
     {
         var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext is null ||
-            !httpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken) ||
-            string.IsNullOrWhiteSpace(refreshToken))
+            !httpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshTokenRaw) ||
+            string.IsNullOrWhiteSpace(refreshTokenRaw))
         {
             return (false, null);
         }
 
-        var hash = RefreshTokenHasher.Sha256Hex(refreshToken.Trim());
+        var hash = RefreshTokenHasher.Sha256Hex(refreshTokenRaw.Trim());
         var utcNow = DateTime.UtcNow;
 
         var existing = await _db.RefreshTokens
             .Include(x => x.User)
             .FirstOrDefaultAsync(
                 x => x.Token == hash && !x.IsRevoked && !x.IsUsed && x.ExpiresAt > utcNow,
-                cancellationToken)
-            ;
+                cancellationToken);
 
         if (existing is null)
         {
+            var reusedOrInvalid = await _db.RefreshTokens
+                .FirstOrDefaultAsync(x => x.Token == hash, cancellationToken);
+
+            if (reusedOrInvalid is not null)
+            {
+                await RevokeAllRefreshTokensForUserAsync(reusedOrInvalid.UserId, cancellationToken);
+                ClearRefreshTokenCookie(httpContext);
+            }
+
             return (false, null);
         }
 
         var user = existing.User;
-        if (user.IsDeleted)
-        {
-            return (false, null);
-        }
-
         if (await _userManager.IsLockedOutAsync(user))
         {
             return (false, null);
@@ -387,6 +292,36 @@ public sealed class AuthService : IAuthService
             user.DisplayName,
             roles.ToArray());
 
+        existing.IsUsed = true;
+
+        var (newRefreshToken, refreshExpires) = _jwtTokenGenerator.CreateRefreshToken();
+        var newRefreshHash = RefreshTokenHasher.Sha256Hex(newRefreshToken);
+
+        _db.RefreshTokens.Add(new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            Token = newRefreshHash,
+            UserId = user.Id,
+            ExpiresAt = refreshExpires.UtcDateTime,
+            IsUsed = false,
+            IsRevoked = false,
+            AddedDate = utcNow,
+        });
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        httpContext.Response.Cookies.Append(
+            "refreshToken",
+            newRefreshToken,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = httpContext.Request.IsHttps,
+                SameSite = SameSiteMode.Strict,
+                Expires = refreshExpires,
+                Path = "/",
+            });
+
         return (true, new AuthResponse
         {
             AccessToken = accessToken,
@@ -395,7 +330,32 @@ public sealed class AuthService : IAuthService
             ExpiresAtUtc = accessExpires,
         });
     }
-    
+
+    public async Task LogoutAsync(CancellationToken cancellationToken = default)
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext is not null &&
+            httpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken) &&
+            !string.IsNullOrWhiteSpace(refreshToken))
+        {
+            var hash = RefreshTokenHasher.Sha256Hex(refreshToken.Trim());
+            var existing = await _db.RefreshTokens
+                .FirstOrDefaultAsync(x => x.Token == hash, cancellationToken);
+
+            if (existing is not null)
+            {
+                existing.IsRevoked = true;
+                existing.ExpiresAt = DateTimeOffset.UtcNow.AddDays(-1).UtcDateTime;
+                await _db.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        if (httpContext is not null)
+        {
+            ClearRefreshTokenCookie(httpContext);
+        }
+    }
+
     //
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> ForgotPasswordAsync(
         ForgotPasswordRequest request,
@@ -462,8 +422,8 @@ public sealed class AuthService : IAuthService
             return (false, new[] { "New password and confirmation do not match." });
         }
 
-        var email = request.Email.Trim();
-        var cacheKey = GetPasswordResetCacheKey(email);
+        
+        var cacheKey = GetPasswordResetCacheKey(request.Email);
 
         if (!_cache.TryGetValue(cacheKey, out PasswordResetOtpCacheEntry? entry) || entry is null)
         {
@@ -475,7 +435,7 @@ public sealed class AuthService : IAuthService
             return (false, new[] { "OTP is invalid or expired." });
         }
 
-        var user = await _userManager.FindByEmailAsync(email);
+        var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
         {
             return (false, new[] { "OTP is invalid or expired." });
@@ -491,10 +451,96 @@ public sealed class AuthService : IAuthService
         return (true, Array.Empty<string>());
     }
 
+    //
+    private async Task<AuthResponse> GenerateAuthResponseAsync(
+    ApplicationUser user,
+    CancellationToken cancellationToken)
+    {
+       
+        var roles = await _userManager.GetRolesAsync(user);
+
+        var (token, expires) = _jwtTokenGenerator.CreateAccessToken(
+            user.Id.ToString(),
+            user.Email ?? string.Empty,
+            user.DisplayName,
+            roles.ToArray());
+
+       
+        var (refreshToken, refreshExpires) = _jwtTokenGenerator.CreateRefreshToken();
+        var refreshTokenHash = RefreshTokenHasher.Sha256Hex(refreshToken);
+
+       
+        _db.RefreshTokens.Add(new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            Token = refreshTokenHash,
+            UserId = user.Id,
+            ExpiresAt = refreshExpires.UtcDateTime,
+            IsUsed = false,
+            IsRevoked = false,
+            AddedDate = DateTime.UtcNow,
+        });
+        await _db.SaveChangesAsync(cancellationToken);
+
+       
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext is not null)
+        {
+            httpContext.Response.Cookies.Append(
+                "refreshToken",
+                refreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = httpContext.Request.IsHttps,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = refreshExpires,
+                    Path = "/",
+                });
+        }
+
+        return new AuthResponse
+        {
+            AccessToken = token,
+            Email = user.Email ?? string.Empty,
+            UserId = user.Id,
+            Roles = roles.ToArray(),
+            ExpiresAtUtc = expires,
+        };
+    }
+
+    //
+    private static void ClearRefreshTokenCookie(HttpContext httpContext)
+    {
+        httpContext.Response.Cookies.Append(
+            "refreshToken",
+            string.Empty,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = httpContext.Request.IsHttps,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddDays(-1),
+                Path = "/",
+            });
+    }
+
+        private async Task RevokeAllRefreshTokensForUserAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            await _db.RefreshTokens
+                .Where(x => x.UserId == userId && !x.IsRevoked)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(t => t.IsRevoked, true)
+                        .SetProperty(t => t.ExpiresAt, DateTime.UtcNow.AddDays(-1)),
+                    cancellationToken);
+        }
+
+    //
     private static string GetPasswordResetCacheKey(string email)
         => $"pwdreset:{email.Trim().ToLowerInvariant()}";
-
-    
+  
+    // 
     private sealed class PasswordResetOtpCacheEntry
     {
         public required string Otp { get; init; }

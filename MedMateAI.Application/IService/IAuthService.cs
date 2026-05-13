@@ -21,6 +21,8 @@ public interface IAuthService
     Task<(bool Succeeded, AuthResponse? Result)> RefreshAccessTokenAsync(
         CancellationToken cancellationToken = default);
 
+    Task LogoutAsync(CancellationToken cancellationToken = default);
+
     Task<(bool Succeeded, IEnumerable<string> Errors, AuthResponse? Result)> LoginWithGoogleAsync(
         GoogleLoginRequest request,
         CancellationToken cancellationToken = default);

@@ -17,6 +17,7 @@ public sealed class SymptomAnalysisSessionConfiguration : IEntityTypeConfigurati
         builder.HasOne<ApplicationUser>()
             .WithMany(x => x.SymptomAnalysisSessions)
             .HasForeignKey(x => x.UserId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.SessionSymptoms)

@@ -152,6 +152,19 @@ public sealed class AuthController : ControllerBase
         });
     }
 
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+    {
+        await _authService.LogoutAsync(cancellationToken);
+        return Ok(new ApiResponse
+        {
+            Success = true,
+            Message = "Logged out.",
+        });
+    }
+
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]

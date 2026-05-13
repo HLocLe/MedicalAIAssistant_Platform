@@ -2,7 +2,7 @@ namespace MedMateAI.Domain.Entities;
 
 public sealed class SymptomAnalysisSession : BaseEntity
 {
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
 
     public string? InputText { get; set; }
 
