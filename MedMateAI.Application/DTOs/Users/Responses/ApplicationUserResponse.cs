@@ -22,8 +22,6 @@ public sealed class ApplicationUserResponse
 
     public DateOnly? DateOfBirth { get; set; }
 
-    public DateTime? FirstLoginAt { get; set; }
-
     public bool IsFirstLogin { get; set; }
 
     public bool IsProfileCompleted { get; set; }

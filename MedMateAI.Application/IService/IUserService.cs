@@ -32,7 +32,7 @@ public interface IUserService
         Guid userId,
         CancellationToken cancellationToken = default);
 
-    Task<(bool Succeeded, IEnumerable<string> Errors)> ApproveUserAsync(
+    Task<(bool Succeeded, IEnumerable<string> Errors, ApproveUserResponse? DataData)> ApproveUserAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
 

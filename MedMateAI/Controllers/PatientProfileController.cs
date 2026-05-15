@@ -9,7 +9,7 @@ namespace MedMateAI.Controllers;
 
 [ApiController]
 [Route("api/patient-profiles")]
-[Authorize]
+
 public sealed class PatientProfileController : ControllerBase
 {
     private readonly IPatientProfileService _patientProfileService;

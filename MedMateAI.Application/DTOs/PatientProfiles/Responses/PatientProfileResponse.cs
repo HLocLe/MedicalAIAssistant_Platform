@@ -22,5 +22,7 @@ public sealed class PatientProfileResponse
 
     public bool IsDeleted { get; set; }
 
+    public bool IsProfileCompleted { get; set; }
+
     public DateTime? DeletedAt { get; set; }
 }

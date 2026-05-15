@@ -231,36 +231,36 @@ public sealed class UserService : IUserService
             : (false, updateResult.Errors.Select(e => e.Description));
     }
 
-    public async Task<(bool Succeeded, IEnumerable<string> Errors)> ApproveUserAsync(
+    public async Task<(bool Succeeded, IEnumerable<string> Errors, ApproveUserResponse? DataData)> ApproveUserAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
         if (userId == Guid.Empty)
         {
-            return (false, new[] { "Invalid user id." });
+            return (false, new[] { "Invalid user id." }, null);
         }
 
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {
-            return (false, new[] { "User not found." });
+            return (false, new[] { "User not found." }, null);
         }
 
         if (user.IsDeleted)
         {
-            return (false, new[] { "Cannot approve a deleted user." });
+            return (false, new[] { "Cannot approve a deleted user." }, null);
         }
 
         if (user.Status != UserStatus.Pending)
         {
-            return (false, new[] { "Only pending accounts can be approved." });
+            return (false, new[] { "Only pending accounts can be approved." }, null);
         }
 
         user.Status = UserStatus.Confirmed;
         var updateResult = await _userManager.UpdateAsync(user);
         return updateResult.Succeeded
-            ? (true, Array.Empty<string>())
-            : (false, updateResult.Errors.Select(e => e.Description));
+            ? (true, Array.Empty<string>(), new ApproveUserResponse { UserId = user.Id, Status = user.Status })
+            : (false, updateResult.Errors.Select(e => e.Description), null);
     }
 
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> MarkPatientProfileCompletedAsync(

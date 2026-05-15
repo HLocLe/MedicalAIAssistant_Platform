@@ -223,10 +223,10 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Approve(Guid userId, CancellationToken cancellationToken)
     {
-        var (ok, errors) = await _userService.ApproveUserAsync(userId, cancellationToken);
+        var (ok, errors, data) = await _userService.ApproveUserAsync(userId, cancellationToken);
         if (!ok)
         {
-            return BadRequest(new ApiResponse
+            return BadRequest(new ApiResponse<ApproveUserResponse>
             {
                 Success = false,
                 Message = "Approve user failed.",
@@ -234,10 +234,12 @@ public sealed class AuthController : ControllerBase
             });
         }
 
-        return Ok(new ApiResponse
+        return Ok(new ApiResponse<ApproveUserResponse>
         {
             Success = true,
             Message = "User approved.",
+            Data = data,
         });
     }
 }
+

@@ -129,13 +129,17 @@ public sealed class PatientProfileService : IPatientProfileService
         await _uow.SaveChangesAsync(cancellationToken);
 
         var mark = await _userService.MarkPatientProfileCompletedAsync(entity.UserId, cancellationToken);
-        
+        var dto=_mapper.Map<PatientProfileResponse>(entity);
+        var user = await _userService.GetUserByIdAsync(entity.UserId, cancellationToken);
+        dto.IsProfileCompleted = user?.IsProfileCompleted ?? true;
+       
         if (!mark.Succeeded)
         {
-            return (false, mark.Errors, _mapper.Map<PatientProfileResponse>(entity));
+            return (false, mark.Errors, dto);
         }
 
-        return (true, Array.Empty<string>(), _mapper.Map<PatientProfileResponse>(entity));
+
+        return (true, Array.Empty<string>(), dto);
     }
 
     public async Task<(bool Succeeded, bool NotFound, IEnumerable<string> Errors, PatientProfileResponse? Data)> UpdatePatientProfileAsync(

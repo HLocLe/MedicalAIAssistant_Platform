@@ -107,27 +107,5 @@ public sealed class UsersController : ControllerBase
         });
     }
 
-    [HttpPost("{userId}/approve")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Approve(Guid userId, CancellationToken cancellationToken)
-    {
-        var (ok, errors) = await _userService.ApproveUserAsync(userId, cancellationToken);
-        if (!ok)
-        {
-            return BadRequest(new ApiResponse
-            {
-                Success = false,
-                Message = "Approve user failed.",
-                Errors = errors.ToList(),
-            });
-        }
-
-        return Ok(new ApiResponse
-        {
-            Success = true,
-            Message = "User approved.",
-        });
+   
     }
-}
