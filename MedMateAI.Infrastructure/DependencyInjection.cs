@@ -48,7 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IPatientProfileService, PatientProfileService>();
         services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
         services.AddScoped<IAIConfigService, AIConfigService>();
-        services.AddScoped<IWebChatbotService, WebChatbotService>();
+        services.AddScoped<IWebChatbotService, MedMateAI.Infrastructure.AI.WebChatbotService>();
       
         
         //

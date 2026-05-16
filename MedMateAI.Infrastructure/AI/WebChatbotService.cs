@@ -7,7 +7,7 @@ using MedMateAI.Application.DTOs.WebChatbot.Requests;
 using MedMateAI.Application.DTOs.WebChatbot.Responses;
 using MedMateAI.Application.IService;
 
-namespace MedMateAI.Application.Service;
+namespace MedMateAI.Infrastructure.AI;
 
 public sealed class WebChatbotService : IWebChatbotService
 {
@@ -27,8 +27,10 @@ public sealed class WebChatbotService : IWebChatbotService
     private const string FallbackEmptyAnswer =
         "Bạn có thể tham khảo các gói đang mở bán bên dưới để chọn gói phù hợp.";
 
-    // AISystemConfig is the primary source for the chatbot system prompt.
-    // used only when there is no active WebSubscriptionAdvisor config or when the configured SystemPrompt is empty, so chatbot still works on fresh/local DBs.
+    // The primary system prompt should come from AISystemConfig.
+    // This fallback prompt is used only when there is no active WebSubscriptionAdvisor config
+    // or the configured SystemPrompt is empty. It keeps the chatbot usable in a fresh/local
+    // database, but production should configure the prompt through AISystemConfig.
     private const string FallbackSystemPrompt = """
         Bạn là chatbot tư vấn gói subscription cho website MedMateAI.
         Nhiệm vụ của bạn là tư vấn thông tin dịch vụ và đề xuất gói subscription phù hợp dựa trên nhu cầu người dùng.
