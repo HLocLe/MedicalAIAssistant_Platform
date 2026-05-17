@@ -10,6 +10,8 @@ namespace MedMateAI.Controllers;
 [Route("api/web-chatbot")]
 public sealed class WebChatbotController : ControllerBase
 {
+    private const int MaxMessageLength = 2000;
+
     private readonly IWebChatbotService _webChatbotService;
 
     public WebChatbotController(IWebChatbotService webChatbotService)
@@ -31,6 +33,16 @@ public sealed class WebChatbotController : ControllerBase
                 Success = false,
                 Message = "Send message failed.",
                 Errors = new List<string> { "Message is required." },
+            });
+        }
+
+        if (request.Message.Trim().Length > MaxMessageLength)
+        {
+            return BadRequest(new ApiResponse<WebChatbotResponse>
+            {
+                Success = false,
+                Message = "Send message failed.",
+                Errors = new List<string> { $"Message must be {MaxMessageLength} characters or fewer." },
             });
         }
 
