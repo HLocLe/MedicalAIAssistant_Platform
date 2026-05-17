@@ -13,7 +13,7 @@ public sealed class OpenRouterChatProvider : IAIChatProvider
 {
     private const string ProviderName = "openrouter";
     private const string DefaultBaseUrl = "https://openrouter.ai/api/v1";
-    private const string DefaultModel = "deepseek/deepseek-v4-flash:free";
+    private const string DefaultModel = "openai/gpt-oss-20b:free";
     private const string DefaultHttpReferer = "http://localhost:3000";
     private const string DefaultXTitle = "MedMateAI";
     private const decimal DefaultTemperature = 0.3m;

@@ -6,8 +6,6 @@ using MedMateAI.Application.DTOs.SubscriptionPlans.Responses;
 using MedMateAI.Application.DTOs.WebChatbot.Requests;
 using MedMateAI.Application.DTOs.WebChatbot.Responses;
 using MedMateAI.Application.IService;
-using MedMateAI.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
 namespace MedMateAI.Infrastructure.AI;
 
@@ -15,51 +13,52 @@ public sealed class WebChatbotService : IWebChatbotService
 {
     private const string PrimaryTaskType = "WebFrontDeskAssistant";
     private const string LegacyTaskType = "WebSubscriptionAdvisor";
-    private const string DefaultModel = "deepseek/deepseek-v4-flash:free";
     private const decimal DefaultTemperature = 0.3m;
     private const int DefaultMaxTokens = 800;
     private const int MaxMessageLength = 2000;
     private const string DefaultIntent = "Unknown";
-    private const string FacilityRecommendationIntent = "FacilityRecommendation";
-    private const string MedicalSafetyRedirectIntent = "MedicalSafetyRedirect";
 
     private const string FallbackParseAnswer =
-        "Xin lỗi, hiện tại tôi chưa thể xử lý yêu cầu này. Bạn có thể mô tả lại nhu cầu hoặc triệu chứng rõ hơn.";
+        "Xin loi, hien tai minh chua the xu ly yeu cau nay. Ban vui long thu lai sau nhe.";
 
     private const string FallbackEmptyAnswer =
-        "Mình đã nhận được thông tin của bạn. Bạn có thể mô tả rõ hơn để mình hỗ trợ phù hợp hơn.";
+        "Minh da nhan duoc thong tin cua ban. Ban co the mo ta ro hon de minh ho tro tot hon.";
 
     // The primary system prompt should come from AISystemConfig.
     // This fallback prompt is used only when there is no active WebFrontDeskAssistant/WebSubscriptionAdvisor config
     // or the configured SystemPrompt is empty. It keeps the chatbot usable in a fresh/local
     // database, but production should configure the prompt through AISystemConfig.
     private const string FallbackSystemPrompt = """
-        You are the AI front-desk assistant for the MedMateAI website.
-        You can:
-        1) greet users,
-        2) advise subscription plans,
-        3) answer basic website/service information,
-        4) suggest suitable medical departments and facility directions based on symptoms and the user-provided area.
+        Ban la AI assistant ho tro khach truy cap website MedMateAI.
 
-        Safety rules:
-        - Do not diagnose diseases.
-        - Do not prescribe medication.
-        - Do not replace a doctor.
-        - If dangerous symptoms appear, advise the user to contact emergency services or go to the nearest medical facility immediately.
+        Ban co the:
+        1. Chao hoi khach hang.
+        2. Giai thich thong tin co ban ve website/dich vu MedMateAI.
+        3. Tu van goi subscription phu hop dua tren nhu cau nguoi dung.
+        4. Gioi thieu cac dich vu ma he thong MedMateAI cung cap.
 
-        Data rules:
-        - Only recommend subscription plans from active plans provided in the prompt.
-        - Only select departments from available departments provided in the prompt.
-        - Do not invent plan names, department names, or facility names.
-        - Medical facilities are selected by backend database query; do not invent facilities.
+        Cac dich vu MedMateAI co the gioi thieu:
+        - Tu van/goi y goi subscription phu hop.
+        - Ho tro phan tich trieu chung o muc tham khao.
+        - Ho tro goi y co so y te phu hop dua tren trieu chung/khu vuc nguoi dung cung cap.
+        - Ho tro scan/phan tich thong tin thuoc.
+        - Ho tro phan tich/tom tat ho so y khoa.
+        - Ho tro tao recovery plan sau khi kham/chua benh.
 
-        Location rule:
-        - The user may type location directly in the message.
-        - Extract that location into extractedLocation when present.
-
-        Output rule:
-        - Always return valid JSON matching the schema exactly.
-        - Do not include markdown.
+        Quy tac quan trong:
+        - Chatbot web nay chi cung cap thong tin dich vu va tu van goi subscription.
+        - Khong truc tiep chan doan benh.
+        - Khong ke thuoc.
+        - Khong truc tiep tra danh sach benh vien/co so y te.
+        - Khong thay the bac si.
+        - Neu nguoi dung hoi trieu chung, benh vien gan nhat, ho so y khoa, thuoc hoac recovery plan, hay giai thich rang MedMateAI co cac dich vu ho tro tuong ung va huong dan nguoi dung su dung tinh nang phu hop trong he thong.
+        - Neu trieu chung nghiem trong, khuyen nguoi dung lien he bac si/cap cuu/co so y te gan nhat.
+        - Chi duoc de xuat subscription plans tu danh sach active plans duoc cung cap.
+        - Khong duoc tu bia ten goi, gia, thoi han hoac quyen loi.
+        - Neu FeatureLimitJson khong du ro, hay noi ro thong tin gioi han tinh nang chua day du.
+        - Tra loi bang tieng Viet, than thien, ngan gon.
+        - Bat buoc tra JSON hop le theo schema.
+        - Khong boc markdown.
         """;
 
     private static readonly JsonSerializerOptions PromptJsonOptions = new()
@@ -67,42 +66,26 @@ public sealed class WebChatbotService : IWebChatbotService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    private static readonly HashSet<string> LocationStopWords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "quan",
-        "q",
-        "phuong",
-        "p",
-        "duong",
-        "street",
-        "district",
-        "ward",
-        "city",
-        "thanh",
-        "pho",
-        "tp",
-        "huyen",
-        "xa",
-        "thi",
-        "tran",
-        "tinh",
-    };
+    private static readonly string[] SupportedIntents =
+    [
+        "Greeting",
+        "SubscriptionRecommendation",
+        "WebInformation",
+        DefaultIntent,
+    ];
 
     private readonly ISubscriptionPlanService _subscriptionPlanService;
     private readonly IAIConfigService _aiConfigService;
     private readonly IAIChatProvider _aiChatProvider;
-    private readonly ApplicationDbContext _dbContext;
 
     public WebChatbotService(
         ISubscriptionPlanService subscriptionPlanService,
         IAIConfigService aiConfigService,
-        IAIChatProvider aiChatProvider,
-        ApplicationDbContext dbContext)
+        IAIChatProvider aiChatProvider)
     {
         _subscriptionPlanService = subscriptionPlanService;
         _aiConfigService = aiConfigService;
         _aiChatProvider = aiChatProvider;
-        _dbContext = dbContext;
     }
 
     public async Task<WebChatbotResponse> SendMessageAsync(
@@ -126,11 +109,10 @@ public sealed class WebChatbotService : IWebChatbotService
         }
 
         var activePlans = await _subscriptionPlanService.ListActiveSubscriptionPlansAsync(cancellationToken);
-        var availableDepartments = await GetAvailableDepartmentsAsync(cancellationToken);
 
         var aiConfig = await GetActiveFrontDeskConfigAsync(cancellationToken);
         var resolvedConfig = ResolveConfig(aiConfig);
-        var prompt = BuildUserPrompt(trimmedMessage, activePlans, availableDepartments);
+        var prompt = BuildUserPrompt(trimmedMessage, activePlans);
 
         var aiRequest = new AIProviderChatRequest
         {
@@ -157,52 +139,14 @@ public sealed class WebChatbotService : IWebChatbotService
             .Select(id => activePlanLookup[id])
             .ToList();
 
-        var departmentSelection = ResolveSuggestedDepartments(aiJsonResponse, availableDepartments);
-        var selectedDepartments = departmentSelection.SelectedDepartments;
-        var selectedDepartmentNames = selectedDepartments
-            .Select(x => x.DepartmentName)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x!.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var intent = NormalizeIntent(aiJsonResponse.Intent);
-        var extractedLocation = NormalizeOptionalText(aiJsonResponse.ExtractedLocation);
-        var shouldRecommendFacilities = IsFacilityRecommendationIntent(intent) || aiJsonResponse.IsEmergencySuggested;
-
-        IReadOnlyList<RecommendedFacilityResponse> recommendedFacilities = Array.Empty<RecommendedFacilityResponse>();
-        if (shouldRecommendFacilities && selectedDepartments.Count > 0)
-        {
-            var selectedDepartmentIds = selectedDepartments.Select(x => x.Id).ToHashSet();
-            recommendedFacilities = await QueryRecommendedFacilitiesAsync(
-                selectedDepartmentIds,
-                extractedLocation,
-                aiJsonResponse.IsEmergencySuggested,
-                cancellationToken);
-        }
-
-        var suggestedDepartments = selectedDepartmentNames.Count > 0
-            ? selectedDepartmentNames
-            : departmentSelection.SuggestedDepartmentNamesFromAI;
-
-        var needsMoreInformation = aiJsonResponse.NeedsMoreInformation;
-        if (shouldRecommendFacilities && selectedDepartments.Count == 0)
-        {
-            needsMoreInformation = true;
-        }
-
         return new WebChatbotResponse
         {
             Answer = string.IsNullOrWhiteSpace(aiJsonResponse.Answer)
                 ? FallbackEmptyAnswer
                 : aiJsonResponse.Answer.Trim(),
             RecommendedPlans = recommendedPlans,
-            RecommendedFacilities = recommendedFacilities,
-            SuggestedDepartments = suggestedDepartments,
-            LocationUsed = extractedLocation,
-            Intent = intent,
-            NeedsMoreInformation = needsMoreInformation,
-            IsEmergencySuggested = aiJsonResponse.IsEmergencySuggested,
+            Intent = NormalizeIntent(aiJsonResponse.Intent),
+            NeedsMoreInformation = aiJsonResponse.NeedsMoreInformation,
         };
     }
 
@@ -212,27 +156,9 @@ public sealed class WebChatbotService : IWebChatbotService
         {
             Answer = FallbackParseAnswer,
             RecommendedPlans = Array.Empty<SubscriptionPlanResponse>(),
-            RecommendedFacilities = Array.Empty<RecommendedFacilityResponse>(),
-            SuggestedDepartments = Array.Empty<string>(),
-            LocationUsed = null,
             Intent = DefaultIntent,
             NeedsMoreInformation = true,
-            IsEmergencySuggested = false,
         };
-    }
-
-    private async Task<IReadOnlyList<DepartmentPromptItem>> GetAvailableDepartmentsAsync(
-        CancellationToken cancellationToken)
-    {
-        return await _dbContext.MedicalDepartments
-            .AsNoTracking()
-            .Where(x => !x.IsDeleted)
-            .OrderBy(x => x.DepartmentName)
-            .Select(x => new DepartmentPromptItem(
-                x.Id,
-                x.DepartmentName,
-                x.Description))
-            .ToListAsync(cancellationToken);
     }
 
     private async Task<AIConfigResponse?> GetActiveFrontDeskConfigAsync(CancellationToken cancellationToken)
@@ -256,7 +182,7 @@ public sealed class WebChatbotService : IWebChatbotService
             ? FallbackSystemPrompt
             : aiConfig.SystemPrompt.Trim();
 
-        var model = DefaultModel;
+        var model = string.Empty;
         var temperature = DefaultTemperature;
         var maxTokens = DefaultMaxTokens;
 
@@ -284,8 +210,7 @@ public sealed class WebChatbotService : IWebChatbotService
 
     private static string BuildUserPrompt(
         string message,
-        IReadOnlyList<SubscriptionPlanResponse> activePlans,
-        IReadOnlyList<DepartmentPromptItem> availableDepartments)
+        IReadOnlyList<SubscriptionPlanResponse> activePlans)
     {
         var plansPayload = activePlans.Select(plan => new
         {
@@ -296,15 +221,7 @@ public sealed class WebChatbotService : IWebChatbotService
             featureLimitJson = plan.FeatureLimitJson,
         });
 
-        var departmentsPayload = availableDepartments.Select(department => new
-        {
-            id = department.Id,
-            departmentName = department.DepartmentName,
-            description = department.Description,
-        });
-
         var plansJson = JsonSerializer.Serialize(plansPayload, PromptJsonOptions);
-        var departmentsJson = JsonSerializer.Serialize(departmentsPayload, PromptJsonOptions);
 
         var builder = new StringBuilder();
         builder.AppendLine("User message:");
@@ -313,167 +230,29 @@ public sealed class WebChatbotService : IWebChatbotService
         builder.AppendLine("Active subscription plans:");
         builder.AppendLine(plansJson);
         builder.AppendLine();
-        builder.AppendLine("Available medical departments:");
-        builder.AppendLine(departmentsJson);
-        builder.AppendLine();
-        builder.AppendLine("Return only valid JSON. Do not wrap in markdown. Do not include explanation outside JSON.");
+        builder.AppendLine("Return only valid JSON. Do not wrap in markdown.");
         builder.AppendLine("Schema:");
         builder.AppendLine("{");
         builder.AppendLine("  \"answer\": \"Vietnamese answer\",");
-        builder.AppendLine("  \"intent\": \"Greeting | SubscriptionRecommendation | FacilityRecommendation | WebInformation | MedicalSafetyRedirect | Unknown\",");
+        builder.AppendLine("  \"intent\": \"Greeting | SubscriptionRecommendation | WebInformation | Unknown\",");
         builder.AppendLine("  \"needsMoreInformation\": false,");
-        builder.AppendLine("  \"recommendedPlanIds\": [\"guid\"],");
-        builder.AppendLine("  \"suggestedDepartmentIds\": [\"guid\"],");
-        builder.AppendLine("  \"suggestedDepartments\": [\"department name\"],");
-        builder.AppendLine("  \"symptomSummary\": \"short symptom summary or null\",");
-        builder.AppendLine("  \"severityLevel\": \"Low | Medium | High | Emergency\",");
-        builder.AppendLine("  \"isEmergencySuggested\": false,");
-        builder.AppendLine("  \"extractedLocation\": \"location extracted from user message or null\"");
+        builder.AppendLine("  \"recommendedPlanIds\": [\"guid\"]");
         builder.AppendLine("}");
         builder.AppendLine();
         builder.AppendLine("Rules:");
         builder.AppendLine("- answer must be in Vietnamese.");
         builder.AppendLine("- recommendedPlanIds must only contain ids from active subscription plans.");
-        builder.AppendLine("- suggestedDepartmentIds must only contain ids from available medical departments.");
-        builder.AppendLine("- If user asks about symptoms or where to get checked, use intent FacilityRecommendation or MedicalSafetyRedirect.");
-        builder.AppendLine("- If user gives a location in the message, extract it to extractedLocation.");
-        builder.AppendLine("- Do not invent medical facility names.");
-        builder.AppendLine("- Do not diagnose disease.");
+        builder.AppendLine("- If user greets, use Greeting.");
+        builder.AppendLine("- If user asks about subscription/service plan, use SubscriptionRecommendation.");
+        builder.AppendLine("- If user asks what MedMateAI can do, features, services, how to use the system, use WebInformation.");
+        builder.AppendLine("- If user asks about symptoms, hospitals, medical records, medicine analysis, or recovery plan, do not perform those tasks directly. Explain that MedMateAI has services to support those needs and guide the user to use the appropriate feature.");
+        builder.AppendLine("- Do not diagnose.");
         builder.AppendLine("- Do not prescribe medication.");
-        builder.AppendLine("- If emergency symptoms appear, set isEmergencySuggested true and severityLevel Emergency or High.");
-        builder.AppendLine("- If location is missing for facility recommendation, needsMoreInformation can be true and answer should ask user to provide their area/district.");
+        builder.AppendLine("- Do not provide a specific hospital/facility list.");
+        builder.AppendLine("- Do not invent plan names, prices, durations, or features.");
+        builder.AppendLine("- If more information is needed to recommend a plan, set recommendedPlanIds to [] and needsMoreInformation to true.");
 
         return builder.ToString();
-    }
-
-    private async Task<IReadOnlyList<RecommendedFacilityResponse>> QueryRecommendedFacilitiesAsync(
-        IReadOnlySet<Guid> selectedDepartmentIds,
-        string? extractedLocation,
-        bool isEmergencySuggested,
-        CancellationToken cancellationToken)
-    {
-        var facilityDepartments = await _dbContext.FacilityDepartments
-            .AsNoTracking()
-            .Include(fd => fd.Facility)
-            .Include(fd => fd.Department)
-            .Include(fd => fd.Doctors)
-            .Where(fd =>
-                selectedDepartmentIds.Contains(fd.DepartmentId) &&
-                !fd.IsDeleted &&
-                fd.Facility != null &&
-                !fd.Facility.IsDeleted &&
-                fd.Facility.IsActive &&
-                fd.Department != null &&
-                !fd.Department.IsDeleted)
-            .ToListAsync(cancellationToken);
-
-        if (facilityDepartments.Count == 0)
-        {
-            return Array.Empty<RecommendedFacilityResponse>();
-        }
-
-        var facilities = facilityDepartments
-            .GroupBy(fd => fd.Facility.Id)
-            .Select(group =>
-            {
-                var facility = group.First().Facility;
-
-                var matchedDepartmentNames = group
-                    .Select(fd => fd.Department.DepartmentName)
-                    .Where(name => !string.IsNullOrWhiteSpace(name))
-                    .Select(name => name!.Trim())
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                var availableDoctors = group
-                    .SelectMany(fd => fd.Doctors)
-                    .Where(doctor => !doctor.IsDeleted && doctor.IsActive && !string.IsNullOrWhiteSpace(doctor.FullName))
-                    .Select(doctor => doctor.FullName!.Trim())
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                var locationMatchScore = CalculateLocationMatchScore(facility.Address, extractedLocation);
-                var departmentScore = matchedDepartmentNames.Count * 10;
-                var doctorScore = availableDoctors.Count > 0 ? 2 : 0;
-                var emergencyBonus = isEmergencySuggested && IsEmergencyFriendlyFacilityType(facility.FacilityType) ? 10 : 0;
-                var matchScore = departmentScore + doctorScore + locationMatchScore + emergencyBonus;
-
-                return new FacilityScoreItem(
-                    new RecommendedFacilityResponse
-                    {
-                        Id = facility.Id,
-                        FacilityName = facility.FacilityName,
-                        Address = facility.Address,
-                        Phone = facility.Phone,
-                        Website = facility.Website,
-                        OpeningHours = facility.OpeningHours,
-                        FacilityType = facility.FacilityType,
-                        MatchedDepartments = matchedDepartmentNames,
-                        AvailableDoctors = availableDoctors,
-                        MatchScore = matchScore,
-                        Reason = BuildFacilityReason(extractedLocation, locationMatchScore, isEmergencySuggested),
-                    },
-                    locationMatchScore);
-            })
-            .OrderByDescending(x => x.Facility.MatchScore ?? 0)
-            .ThenByDescending(x => x.LocationMatchScore)
-            .ThenBy(x => x.Facility.FacilityName ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-            .Take(5)
-            .Select(x => x.Facility)
-            .ToList();
-
-        return facilities;
-    }
-
-    private static DepartmentSelection ResolveSuggestedDepartments(
-        WebChatbotAIJsonResponse aiJsonResponse,
-        IReadOnlyList<DepartmentPromptItem> availableDepartments)
-    {
-        if (availableDepartments.Count == 0)
-        {
-            return new DepartmentSelection(
-                Array.Empty<DepartmentPromptItem>(),
-                NormalizeNameList(aiJsonResponse.SuggestedDepartments));
-        }
-
-        var departmentsById = availableDepartments.ToDictionary(x => x.Id, x => x);
-        var selectedById = aiJsonResponse.SuggestedDepartmentIds
-            .Where(departmentsById.ContainsKey)
-            .Distinct()
-            .Select(id => departmentsById[id])
-            .ToList();
-
-        if (selectedById.Count > 0)
-        {
-            return new DepartmentSelection(
-                selectedById,
-                NormalizeNameList(aiJsonResponse.SuggestedDepartments));
-        }
-
-        var normalizedNameLookup = availableDepartments
-            .Where(x => !string.IsNullOrWhiteSpace(x.DepartmentName))
-            .GroupBy(x => NormalizeForComparison(x.DepartmentName!))
-            .ToDictionary(group => group.Key, group => group.First());
-
-        var selectedByName = new List<DepartmentPromptItem>();
-        foreach (var name in aiJsonResponse.SuggestedDepartments)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                continue;
-            }
-
-            var normalizedName = NormalizeForComparison(name);
-            if (normalizedNameLookup.TryGetValue(normalizedName, out var department)
-                && selectedByName.All(x => x.Id != department.Id))
-            {
-                selectedByName.Add(department);
-            }
-        }
-
-        return new DepartmentSelection(
-            selectedByName,
-            NormalizeNameList(aiJsonResponse.SuggestedDepartments));
     }
 
     private static bool TryParseModelParams(string modelParamsJson, out ModelParams parsedModelParams)
@@ -529,12 +308,6 @@ public sealed class WebChatbotService : IWebChatbotService
             aiJsonResponse.Intent = TryGetStringProperty(document.RootElement, "intent")?.Trim();
             aiJsonResponse.NeedsMoreInformation = TryGetBooleanProperty(document.RootElement, "needsMoreInformation");
             aiJsonResponse.RecommendedPlanIds = ParseGuidCollectionFromProperty(document.RootElement, "recommendedPlanIds");
-            aiJsonResponse.SuggestedDepartmentIds = ParseGuidCollectionFromProperty(document.RootElement, "suggestedDepartmentIds");
-            aiJsonResponse.SuggestedDepartments = ParseStringCollectionFromProperty(document.RootElement, "suggestedDepartments");
-            aiJsonResponse.SymptomSummary = NormalizeOptionalText(TryGetStringProperty(document.RootElement, "symptomSummary"));
-            aiJsonResponse.SeverityLevel = NormalizeOptionalText(TryGetStringProperty(document.RootElement, "severityLevel"));
-            aiJsonResponse.IsEmergencySuggested = TryGetBooleanProperty(document.RootElement, "isEmergencySuggested");
-            aiJsonResponse.ExtractedLocation = NormalizeOptionalText(TryGetStringProperty(document.RootElement, "extractedLocation"));
 
             return true;
         }
@@ -575,39 +348,6 @@ public sealed class WebChatbotService : IWebChatbotService
         return ids;
     }
 
-    private static IReadOnlyList<string> ParseStringCollectionFromProperty(JsonElement root, string propertyName)
-    {
-        if (!TryGetPropertyIgnoreCase(root, propertyName, out var element))
-        {
-            return Array.Empty<string>();
-        }
-
-        var values = new List<string>();
-        if (element.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var item in element.EnumerateArray())
-            {
-                var value = ParseStringFromElement(item);
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    values.Add(value.Trim());
-                }
-            }
-        }
-        else
-        {
-            var value = ParseStringFromElement(element);
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                values.Add(value.Trim());
-            }
-        }
-
-        return values
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
     private static Guid? ParseGuidFromElement(JsonElement element)
     {
         if (element.ValueKind == JsonValueKind.String
@@ -622,28 +362,6 @@ public sealed class WebChatbotService : IWebChatbotService
             && Guid.TryParse(nestedIdElement.GetString(), out parsedGuid))
         {
             return parsedGuid;
-        }
-
-        return null;
-    }
-
-    private static string? ParseStringFromElement(JsonElement element)
-    {
-        if (element.ValueKind == JsonValueKind.String)
-        {
-            return element.GetString();
-        }
-
-        if (element.ValueKind == JsonValueKind.Object)
-        {
-            return TryGetStringProperty(element, "name")
-                ?? TryGetStringProperty(element, "departmentName")
-                ?? TryGetStringProperty(element, "value");
-        }
-
-        if (element.ValueKind is JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False)
-        {
-            return element.ToString();
         }
 
         return null;
@@ -672,99 +390,6 @@ public sealed class WebChatbotService : IWebChatbotService
         }
 
         return trimmed.Trim();
-    }
-
-    private static bool IsFacilityRecommendationIntent(string? intent)
-    {
-        if (string.IsNullOrWhiteSpace(intent))
-        {
-            return false;
-        }
-
-        return string.Equals(intent, FacilityRecommendationIntent, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(intent, MedicalSafetyRedirectIntent, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static int CalculateLocationMatchScore(string? address, string? extractedLocation)
-    {
-        if (string.IsNullOrWhiteSpace(extractedLocation))
-        {
-            return 0;
-        }
-
-        var normalizedAddress = NormalizeForComparison(address);
-        var normalizedLocation = NormalizeForComparison(extractedLocation);
-        if (string.IsNullOrWhiteSpace(normalizedAddress) || string.IsNullOrWhiteSpace(normalizedLocation))
-        {
-            return 0;
-        }
-
-        var score = 0;
-        if (normalizedAddress.Contains(normalizedLocation, StringComparison.Ordinal))
-        {
-            score += 20;
-        }
-
-        var importantTokens = normalizedLocation
-            .Split(new[] { ' ', ',', ';', '-', '/', '\\', '.' }, StringSplitOptions.RemoveEmptyEntries)
-            .Where(token => token.Length > 1 && !LocationStopWords.Contains(token))
-            .Distinct(StringComparer.Ordinal);
-
-        foreach (var token in importantTokens)
-        {
-            if (normalizedAddress.Contains(token, StringComparison.Ordinal))
-            {
-                score += 5;
-            }
-        }
-
-        return score;
-    }
-
-    private static bool IsEmergencyFriendlyFacilityType(string? facilityType)
-    {
-        if (string.IsNullOrWhiteSpace(facilityType))
-        {
-            return false;
-        }
-
-        var normalized = NormalizeForComparison(facilityType);
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            return false;
-        }
-
-        return normalized.Contains("hospital", StringComparison.Ordinal)
-            || normalized.Contains("benh vien", StringComparison.Ordinal)
-            || normalized.Contains("emergency", StringComparison.Ordinal)
-            || normalized.Contains("cap cuu", StringComparison.Ordinal);
-    }
-
-    private static string BuildFacilityReason(
-        string? extractedLocation,
-        int locationMatchScore,
-        bool isEmergencySuggested)
-    {
-        string reason;
-        if (!string.IsNullOrWhiteSpace(extractedLocation) && locationMatchScore > 0)
-        {
-            reason = $"Cơ sở này có chuyên khoa phù hợp và địa chỉ khớp với khu vực {extractedLocation} bạn cung cấp.";
-        }
-        else if (string.IsNullOrWhiteSpace(extractedLocation))
-        {
-            reason = "Cơ sở này có chuyên khoa phù hợp với triệu chứng bạn mô tả. Bạn có thể cung cấp khu vực/quận để mình gợi ý sát hơn.";
-        }
-        else
-        {
-            reason = $"Cơ sở này có chuyên khoa phù hợp. Bạn có thể kiểm tra thêm địa chỉ theo khu vực {extractedLocation} đã cung cấp.";
-        }
-
-        if (isEmergencySuggested)
-        {
-            reason += " Nếu triệu chứng nghiêm trọng hoặc diễn tiến nhanh, hãy liên hệ cấp cứu hoặc đến cơ sở y tế gần nhất ngay.";
-        }
-
-        return reason;
     }
 
     private static string? TryGetStringProperty(JsonElement root, string propertyName)
@@ -875,64 +500,21 @@ public sealed class WebChatbotService : IWebChatbotService
 
     private static string NormalizeIntent(string? intent)
     {
-        return string.IsNullOrWhiteSpace(intent) ? DefaultIntent : intent.Trim();
-    }
-
-    private static string? NormalizeOptionalText(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(intent))
         {
-            return null;
+            return DefaultIntent;
         }
 
-        return value.Trim();
-    }
-
-    private static IReadOnlyList<string> NormalizeNameList(IReadOnlyList<string> values)
-    {
-        return values
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static string NormalizeForComparison(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
+        var normalized = intent.Trim();
+        foreach (var supportedIntent in SupportedIntents)
         {
-            return string.Empty;
-        }
-
-        var withoutDiacritics = RemoveDiacritics(value);
-        var collapsedWhitespace = string.Join(
-            " ",
-            withoutDiacritics
-                .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-
-        return collapsedWhitespace.ToLowerInvariant();
-    }
-
-    private static string RemoveDiacritics(string input)
-    {
-        var normalizedString = input
-            .Replace('đ', 'd')
-            .Replace('Đ', 'D')
-            .Normalize(NormalizationForm.FormD);
-        var builder = new StringBuilder(normalizedString.Length);
-
-        foreach (var c in normalizedString)
-        {
-            var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
-            if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+            if (string.Equals(normalized, supportedIntent, StringComparison.OrdinalIgnoreCase))
             {
-                builder.Append(c);
+                return supportedIntent;
             }
         }
 
-        return builder
-            .ToString()
-            .Normalize(NormalizationForm.FormC);
+        return DefaultIntent;
     }
 
     private sealed record ResolvedChatConfig(
@@ -951,17 +533,4 @@ public sealed class WebChatbotService : IWebChatbotService
 
         public int? MaxTokens { get; set; }
     }
-
-    private sealed record DepartmentPromptItem(
-        Guid Id,
-        string? DepartmentName,
-        string? Description);
-
-    private sealed record DepartmentSelection(
-        IReadOnlyList<DepartmentPromptItem> SelectedDepartments,
-        IReadOnlyList<string> SuggestedDepartmentNamesFromAI);
-
-    private sealed record FacilityScoreItem(
-        RecommendedFacilityResponse Facility,
-        int LocationMatchScore);
 }

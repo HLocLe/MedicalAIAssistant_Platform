@@ -3,6 +3,7 @@ using MedMateAI.Application.DTOs.WebChatbot.Requests;
 using MedMateAI.Application.DTOs.WebChatbot.Responses;
 using MedMateAI.Application.IService;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace MedMateAI.Controllers;
 
@@ -13,10 +14,14 @@ public sealed class WebChatbotController : ControllerBase
     private const int MaxMessageLength = 2000;
 
     private readonly IWebChatbotService _webChatbotService;
+    private readonly ILogger<WebChatbotController> _logger;
 
-    public WebChatbotController(IWebChatbotService webChatbotService)
+    public WebChatbotController(
+        IWebChatbotService webChatbotService,
+        ILogger<WebChatbotController> logger)
     {
         _webChatbotService = webChatbotService;
+        _logger = logger;
     }
 
     [HttpPost("message")]
@@ -67,11 +72,16 @@ public sealed class WebChatbotController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogError(ex, "Web chatbot service is unavailable.");
+
             return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<WebChatbotResponse>
             {
                 Success = false,
                 Message = "Web chatbot is unavailable.",
-                Errors = new List<string> { ex.Message },
+                Errors = new List<string>
+                {
+                    "The AI chatbot service is currently unavailable. Please try again later.",
+                },
             });
         }
     }
