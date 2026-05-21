@@ -1,4 +1,6 @@
 using MedMateAI.Domain.Persistence;
+using MedMateAI.Domain.Repository;
+using MedMateAI.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MedMateAI.Infrastructure;
@@ -6,12 +8,16 @@ namespace MedMateAI.Infrastructure;
 public sealed class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
+    private IMedicalFacilityRepository? _medicalFacilities;
     private IDbContextTransaction? _transaction;
 
     public UnitOfWork(ApplicationDbContext context)
     {
         _context = context;
     }
+
+    public IMedicalFacilityRepository MedicalFacilities =>
+        _medicalFacilities ??= new MedicalFacilityRepository(_context);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
