@@ -1,3 +1,5 @@
+using MedMateAI.Domain.Enums;
+
 namespace MedMateAI.Domain.Entities;
 
 public sealed class Doctor : BaseEntity
@@ -9,6 +11,8 @@ public sealed class Doctor : BaseEntity
     public string? Specialty { get; set; }
 
     public string? AcademicTitle { get; set; }
+
+    public DepartmentRole DepartmentRole { get; set; } = DepartmentRole.Staff;
 
     public int? YearsOfExperience { get; set; }
 

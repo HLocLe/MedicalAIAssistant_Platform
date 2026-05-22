@@ -80,6 +80,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
 
+    public DbSet<Payment> Payments => Set<Payment>();
+
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {

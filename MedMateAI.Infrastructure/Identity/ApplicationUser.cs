@@ -38,6 +38,8 @@ public class ApplicationUser : IdentityUser<Guid>
 
     public ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
 
+    public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
     public string? DisplayName { get; set; }
 
     public string? Address { get; set; }
