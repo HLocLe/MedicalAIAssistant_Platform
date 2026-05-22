@@ -10,6 +10,7 @@ public sealed class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
     private IMedicalFacilityRepository? _medicalFacilities;
+    private IDoctorRepository? _doctors;
     private IGenericRepository<MedicalDepartment>? _medicalDepartments;
     private IGenericRepository<FacilityDepartment>? _facilityDepartments;
     private IDbContextTransaction? _transaction;
@@ -21,6 +22,9 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public IMedicalFacilityRepository MedicalFacilities =>
         _medicalFacilities ??= new MedicalFacilityRepository(_context);
+
+    public IDoctorRepository Doctors =>
+        _doctors ??= new DoctorRepository(_context);
 
     public IGenericRepository<MedicalDepartment> MedicalDepartments =>
         _medicalDepartments ??= new GenericRepository<MedicalDepartment>(_context);

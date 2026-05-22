@@ -6,6 +6,7 @@ namespace MedMateAI.Domain.Persistence;
 public interface IUnitOfWork : IAsyncDisposable
 {
     IMedicalFacilityRepository MedicalFacilities { get; }
+    IDoctorRepository Doctors { get; }
     IGenericRepository<MedicalDepartment> MedicalDepartments { get; }
     IGenericRepository<FacilityDepartment> FacilityDepartments { get; }
 
