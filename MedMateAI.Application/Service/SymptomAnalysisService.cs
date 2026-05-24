@@ -558,12 +558,7 @@ public sealed class SymptomAnalysisService : ISymptomAnalysisService
             return string.Empty;
         }
 
-        var trimmedDepartmentName = departmentName.Trim();
-
-        var normalizedDepartmentName =trimmedDepartmentName.ToLowerInvariant();
-
-        return normalizedDepartmentName;
-    
+        return departmentName!.Trim().ToLowerInvariant();
     }
 
     private static string? NormalizeTextAllowEmpty(string? value)

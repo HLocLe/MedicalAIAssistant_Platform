@@ -7,8 +7,7 @@ public interface IUnitOfWork : IAsyncDisposable
 {
     IMedicalFacilityRepository MedicalFacilities { get; }
     IDoctorRepository Doctors { get; }
-    IGenericRepository<MedicalDepartment> MedicalDepartments { get; }
-    IGenericRepository<FacilityDepartment> FacilityDepartments { get; }
+  
 
     ISymptomAnalysisSessionRepository SymptomAnalysisSessions { get; }
 
@@ -17,6 +16,8 @@ public interface IUnitOfWork : IAsyncDisposable
     IDepartmentRecommendationRepository DepartmentRecommendations { get; }
 
     IMedicalDepartmentRepository MedicalDepartments { get; }
+
+    IFacilityDepartmentRepository FacilityDepartments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
