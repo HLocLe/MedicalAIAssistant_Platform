@@ -13,6 +13,16 @@ public sealed class RecoveryPlanConfiguration : IEntityTypeConfiguration<Recover
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("RecoveryPlanId").ValueGeneratedOnAdd();
 
+        builder.HasOne(x => x.TestSession)
+            .WithMany(x => x.RecoveryPlans)
+            .HasForeignKey(x => x.TestSessionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(x => x.SymptomAnalysisSession)
+            .WithMany(x => x.RecoveryPlans)
+            .HasForeignKey(x => x.SymptomAnalysisSessionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasMany(x => x.TreatmentLogs)
             .WithOne(x => x.RecoveryPlan)
             .HasForeignKey(x => x.RecoveryPlanId)

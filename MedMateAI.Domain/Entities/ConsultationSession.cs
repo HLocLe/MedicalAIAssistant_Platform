@@ -29,4 +29,6 @@ public sealed class ConsultationSession : BaseEntity
     public ICollection<ConsultationQuestion> ConsultationQuestions { get; set; } = new List<ConsultationQuestion>();
 
     public ICollection<AISystemConfig> AISystemConfigs { get; set; } = new List<AISystemConfig>();
+
+    public ICollection<AIAnalysis> AIAnalyses { get; set; } = new List<AIAnalysis>();
 }

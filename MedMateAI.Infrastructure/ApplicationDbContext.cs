@@ -3,6 +3,7 @@ using MedMateAI.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace MedMateAI.Infrastructure;
 
@@ -30,17 +31,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
     public DbSet<Doctor> Doctors => Set<Doctor>();
 
-    public DbSet<MedicalVisit> MedicalVisits => Set<MedicalVisit>();
-
     public DbSet<FeedbackReview> FeedbackReviews => Set<FeedbackReview>();
 
-    public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
+    public DbSet<LabTestSession> LabTestSessions => Set<LabTestSession>();
 
-    public DbSet<MedicalRecordFile> MedicalRecordFiles => Set<MedicalRecordFile>();
+    public DbSet<LabIndicatorMaster> LabIndicatorMasters => Set<LabIndicatorMaster>();
 
-    public DbSet<LabResult> LabResults => Set<LabResult>();
+    public DbSet<LabTestResultDetail> LabTestResultDetails => Set<LabTestResultDetail>();
 
-    public DbSet<LabResultDetail> LabResultDetails => Set<LabResultDetail>();
+    public DbSet<LabIndicatorAdviceCache> LabIndicatorAdviceCaches => Set<LabIndicatorAdviceCache>();
 
     public DbSet<AIAnalysis> AIAnalyses => Set<AIAnalysis>();
 
@@ -52,17 +51,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
     public DbSet<KnowledgeChunk> KnowledgeChunks => Set<KnowledgeChunk>();
 
-    public DbSet<Medicine> Medicines => Set<Medicine>();
-
-    public DbSet<MedicationScan> MedicationScans => Set<MedicationScan>();
-
-    public DbSet<MedicationScanResult> MedicationScanResults => Set<MedicationScanResult>();
-
     public DbSet<UserMedication> UserMedications => Set<UserMedication>();
-
-    public DbSet<DrugAnalysis> DrugAnalyses => Set<DrugAnalysis>();
-
-    public DbSet<DrugAnalysisResult> DrugAnalysisResults => Set<DrugAnalysisResult>();
 
     public DbSet<TreatmentJourney> TreatmentJourneys => Set<TreatmentJourney>();
 

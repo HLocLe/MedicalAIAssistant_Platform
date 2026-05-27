@@ -3,6 +3,7 @@ using System;
 using MedMateAI.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MedMateAI.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260525075236_RemoveVisitAndDoctorFromFeedbackReview")]
+    partial class RemoveVisitAndDoctorFromFeedbackReview
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28,9 +31,6 @@ namespace MedMateAI.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("AIAnalysisId");
-
-                    b.Property<Guid?>("ConsultationSessionId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -50,9 +50,6 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<string>("Prompt")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("RecoveryPlanId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("ResultSummary")
                         .HasColumnType("text");
 
@@ -65,12 +62,6 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("SymptomAnalysisSessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("TestSessionId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("TreatmentJourneyId")
                         .HasColumnType("uuid");
 
@@ -81,14 +72,6 @@ namespace MedMateAI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ConsultationSessionId");
-
-                    b.HasIndex("RecoveryPlanId");
-
-                    b.HasIndex("SymptomAnalysisSessionId");
-
-                    b.HasIndex("TestSessionId");
 
                     b.HasIndex("TreatmentJourneyId");
 
@@ -113,6 +96,9 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("DrugAnalysisId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -121,6 +107,9 @@ namespace MedMateAI.Infrastructure.Migrations
 
                     b.Property<int?>("MaxTokens")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("MedicationScanId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Model")
                         .HasMaxLength(256)
@@ -143,15 +132,19 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<decimal?>("Temperature")
                         .HasColumnType("numeric");
 
-                    b.Property<Guid?>("TestSessionId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("VisitId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ConsultationSessionId");
+
+                    b.HasIndex("DrugAnalysisId");
+
+                    b.HasIndex("MedicationScanId");
 
                     b.HasIndex("RecoveryPlanId");
 
@@ -160,7 +153,7 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.HasIndex("TaskType")
                         .IsUnique();
 
-                    b.HasIndex("TestSessionId");
+                    b.HasIndex("VisitId");
 
                     b.ToTable("AISystemConfig", (string)null);
                 });
@@ -353,6 +346,95 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.ToTable("Doctor", (string)null);
                 });
 
+            modelBuilder.Entity("MedMateAI.Domain.Entities.DrugAnalysis", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("DrugAnalysisId");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TreatmentJourneyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TreatmentJourneyId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DrugAnalysis", (string)null);
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.DrugAnalysisResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("DrugAnalysisResultId");
+
+                    b.Property<string>("CombinationVerdict")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DietaryInteraction")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("DrugAnalysisId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("InteractionDetail")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MedicineId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Precaution")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Severity")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UsageOptimization")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DrugAnalysisId");
+
+                    b.HasIndex("MedicineId");
+
+                    b.ToTable("DrugAnalysisResult", (string)null);
+                });
+
             modelBuilder.Entity("MedMateAI.Domain.Entities.FacilityDepartment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -459,6 +541,9 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("TreatmentJourneyId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("TreatmentLogId")
                         .HasColumnType("uuid");
 
@@ -469,6 +554,8 @@ namespace MedMateAI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TreatmentJourneyId");
 
                     b.HasIndex("TreatmentLogId");
 
@@ -595,12 +682,12 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.ToTable("KnowledgeSource", (string)null);
                 });
 
-            modelBuilder.Entity("MedMateAI.Domain.Entities.LabIndicatorAdviceCache", b =>
+            modelBuilder.Entity("MedMateAI.Domain.Entities.LabResult", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("CacheId");
+                        .HasColumnName("LabResultId");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -608,55 +695,37 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("DoctorQuestions")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FollowUpSuggestion")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("IndicatorId")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("LifestyleAdvice")
+                    b.Property<string>("LabName")
                         .HasColumnType("text");
 
-                    b.Property<string>("NutritionalAdvice")
+                    b.Property<Guid>("MedicalRecordId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OverallConclusion")
                         .HasColumnType("text");
 
-                    b.Property<string>("PossibleCauses")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<DateTime?>("TestedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UrgencyLevel")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("WarningSigns")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("IndicatorId", "Status")
-                        .IsUnique();
+                    b.HasIndex("MedicalRecordId");
 
-                    b.ToTable("LabIndicatorAdviceCache", (string)null);
+                    b.ToTable("LabResult", (string)null);
                 });
 
-            modelBuilder.Entity("MedMateAI.Domain.Entities.LabIndicatorMaster", b =>
+            modelBuilder.Entity("MedMateAI.Domain.Entities.LabResultDetail", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("IndicatorId");
+                        .HasColumnName("LabResultItemId");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -664,113 +733,38 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Description")
+                    b.Property<string>("Interpretation")
                         .HasColumnType("text");
-
-                    b.Property<string>("FullName")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<double?>("MaxReference")
+                    b.Property<Guid>("LabResultId")
+                        .HasColumnType("uuid");
+
+                    b.Property<double?>("NormalRangeMax")
                         .HasColumnType("double precision");
 
-                    b.Property<double?>("MinReference")
+                    b.Property<double?>("NormalRangeMin")
                         .HasColumnType("double precision");
 
-                    b.Property<string>("Symbol")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<string>("TestName")
+                        .HasColumnType("text");
 
                     b.Property<string>("Unit")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Symbol")
-                        .IsUnique();
-
-                    b.ToTable("LabIndicatorMaster", (string)null);
-                });
-
-            modelBuilder.Entity("MedMateAI.Domain.Entities.LabTestResultDetail", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("ResultDetailId");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("IndicatorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<Guid>("TestSessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<double?>("UserValue")
-                        .HasColumnType("double precision");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IndicatorId");
-
-                    b.HasIndex("TestSessionId");
-
-                    b.ToTable("LabTestResultDetail", (string)null);
-                });
-
-            modelBuilder.Entity("MedMateAI.Domain.Entities.LabTestSession", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("TestSessionId");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("RawOcrText")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Value")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("LabResultId");
 
-                    b.ToTable("LabTestSession", (string)null);
+                    b.ToTable("LabResultDetails", (string)null);
                 });
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalDepartment", b =>
@@ -852,6 +846,275 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("MedicalFacility", (string)null);
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("MedicalRecordId");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly?>("RecordDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("RecordType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("VisitId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("VisitId");
+
+                    b.ToTable("MedicalRecord", (string)null);
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalRecordFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("MedicalRecordFileId");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MedicalRecordId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MedicalRecordId");
+
+                    b.ToTable("MedicalRecordFile", (string)null);
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalVisit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("VisitId");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DiagnosisNote")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FacilityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("VisitDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("FacilityId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MedicalVisit", (string)null);
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicationScan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("MedicationScanId");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExtractedText")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MedicationScan", (string)null);
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicationScanResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("MedicationScanResultId");
+
+                    b.Property<double?>("ConfidenceScore")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DetectedDosage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DetectedName")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MedicationScanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MedicineId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MedicationScanId");
+
+                    b.HasIndex("MedicineId");
+
+                    b.ToTable("MedicationScanResult", (string)null);
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.Medicine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("MedicineId");
+
+                    b.Property<string>("ActiveIngredient")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DosageForm")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Manufacturer")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MedicineName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Strength")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Medicine", (string)null);
                 });
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.Notification", b =>
@@ -1078,12 +1341,6 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date");
 
-                    b.Property<Guid?>("SymptomAnalysisSessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("TestSessionId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("TreatmentJourneyId")
                         .HasColumnType("uuid");
 
@@ -1091,10 +1348,6 @@ namespace MedMateAI.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("SymptomAnalysisSessionId");
-
-                    b.HasIndex("TestSessionId");
 
                     b.HasIndex("TreatmentJourneyId");
 
@@ -1239,17 +1492,11 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("DepartmentId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("DiagnosisSummary")
                         .HasColumnType("text");
 
                     b.Property<DateOnly?>("EndDate")
                         .HasColumnType("date");
-
-                    b.Property<Guid?>("FacilityId")
-                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -1269,13 +1516,14 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("VisitId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("DepartmentId");
-
-                    b.HasIndex("FacilityId");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("VisitId");
 
                     b.ToTable("TreatmentJourney", (string)null);
                 });
@@ -1356,10 +1604,8 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("MedicineName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                    b.Property<Guid>("MedicineId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date");
@@ -1377,6 +1623,8 @@ namespace MedMateAI.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MedicineId");
 
                     b.HasIndex("TreatmentJourneyId");
 
@@ -1704,26 +1952,6 @@ namespace MedMateAI.Infrastructure.Migrations
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.AIAnalysis", b =>
                 {
-                    b.HasOne("MedMateAI.Domain.Entities.ConsultationSession", "ConsultationSession")
-                        .WithMany("AIAnalyses")
-                        .HasForeignKey("ConsultationSessionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("MedMateAI.Domain.Entities.RecoveryPlan", "RecoveryPlan")
-                        .WithMany("AIAnalyses")
-                        .HasForeignKey("RecoveryPlanId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("MedMateAI.Domain.Entities.SymptomAnalysisSession", "SymptomAnalysisSession")
-                        .WithMany("AIAnalyses")
-                        .HasForeignKey("SymptomAnalysisSessionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("MedMateAI.Domain.Entities.LabTestSession", "TestSession")
-                        .WithMany("AIAnalyses")
-                        .HasForeignKey("TestSessionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("MedMateAI.Domain.Entities.TreatmentJourney", "TreatmentJourney")
                         .WithMany("AIAnalyses")
                         .HasForeignKey("TreatmentJourneyId")
@@ -1736,14 +1964,6 @@ namespace MedMateAI.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("ConsultationSession");
-
-                    b.Navigation("RecoveryPlan");
-
-                    b.Navigation("SymptomAnalysisSession");
-
-                    b.Navigation("TestSession");
-
                     b.Navigation("TreatmentJourney");
                 });
 
@@ -1752,6 +1972,16 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.HasOne("MedMateAI.Domain.Entities.ConsultationSession", "ConsultationSession")
                         .WithMany("AISystemConfigs")
                         .HasForeignKey("ConsultationSessionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MedMateAI.Domain.Entities.DrugAnalysis", "DrugAnalysis")
+                        .WithMany("AISystemConfigs")
+                        .HasForeignKey("DrugAnalysisId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MedMateAI.Domain.Entities.MedicationScan", "MedicationScan")
+                        .WithMany("AISystemConfigs")
+                        .HasForeignKey("MedicationScanId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("MedMateAI.Domain.Entities.RecoveryPlan", "RecoveryPlan")
@@ -1764,18 +1994,22 @@ namespace MedMateAI.Infrastructure.Migrations
                         .HasForeignKey("SymptomAnalysisSessionId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("MedMateAI.Domain.Entities.LabTestSession", "TestSession")
+                    b.HasOne("MedMateAI.Domain.Entities.MedicalVisit", "Visit")
                         .WithMany("AISystemConfigs")
-                        .HasForeignKey("TestSessionId")
+                        .HasForeignKey("VisitId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("ConsultationSession");
+
+                    b.Navigation("DrugAnalysis");
+
+                    b.Navigation("MedicationScan");
 
                     b.Navigation("RecoveryPlan");
 
                     b.Navigation("SymptomAnalysisSession");
 
-                    b.Navigation("TestSession");
+                    b.Navigation("Visit");
                 });
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.ConsultationQuestion", b =>
@@ -1859,6 +2093,42 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Navigation("FacilityDepartment");
                 });
 
+            modelBuilder.Entity("MedMateAI.Domain.Entities.DrugAnalysis", b =>
+                {
+                    b.HasOne("MedMateAI.Domain.Entities.TreatmentJourney", "TreatmentJourney")
+                        .WithMany("DrugAnalyses")
+                        .HasForeignKey("TreatmentJourneyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MedMateAI.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany("DrugAnalyses")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("TreatmentJourney");
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.DrugAnalysisResult", b =>
+                {
+                    b.HasOne("MedMateAI.Domain.Entities.DrugAnalysis", "DrugAnalysis")
+                        .WithMany("DrugAnalysisResults")
+                        .HasForeignKey("DrugAnalysisId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MedMateAI.Domain.Entities.Medicine", "Medicine")
+                        .WithMany("DrugAnalysisResults")
+                        .HasForeignKey("MedicineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DrugAnalysis");
+
+                    b.Navigation("Medicine");
+                });
+
             modelBuilder.Entity("MedMateAI.Domain.Entities.FacilityDepartment", b =>
                 {
                     b.HasOne("MedMateAI.Domain.Entities.MedicalDepartment", "Department")
@@ -1897,6 +2167,12 @@ namespace MedMateAI.Infrastructure.Migrations
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.FollowUpReminder", b =>
                 {
+                    b.HasOne("MedMateAI.Domain.Entities.TreatmentJourney", "TreatmentJourney")
+                        .WithMany("FollowUpReminders")
+                        .HasForeignKey("TreatmentJourneyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MedMateAI.Domain.Entities.TreatmentLog", "TreatmentLog")
                         .WithMany("FollowUpReminders")
                         .HasForeignKey("TreatmentLogId")
@@ -1908,6 +2184,8 @@ namespace MedMateAI.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("TreatmentJourney");
 
                     b.Navigation("TreatmentLog");
                 });
@@ -1934,43 +2212,115 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Navigation("KnowledgeSource");
                 });
 
-            modelBuilder.Entity("MedMateAI.Domain.Entities.LabIndicatorAdviceCache", b =>
+            modelBuilder.Entity("MedMateAI.Domain.Entities.LabResult", b =>
                 {
-                    b.HasOne("MedMateAI.Domain.Entities.LabIndicatorMaster", "Indicator")
-                        .WithMany("LabIndicatorAdviceCaches")
-                        .HasForeignKey("IndicatorId")
+                    b.HasOne("MedMateAI.Domain.Entities.MedicalRecord", "MedicalRecord")
+                        .WithMany("LabResults")
+                        .HasForeignKey("MedicalRecordId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Indicator");
+                    b.Navigation("MedicalRecord");
                 });
 
-            modelBuilder.Entity("MedMateAI.Domain.Entities.LabTestResultDetail", b =>
+            modelBuilder.Entity("MedMateAI.Domain.Entities.LabResultDetail", b =>
                 {
-                    b.HasOne("MedMateAI.Domain.Entities.LabIndicatorMaster", "Indicator")
-                        .WithMany("LabTestResultDetails")
-                        .HasForeignKey("IndicatorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MedMateAI.Domain.Entities.LabTestSession", "TestSession")
-                        .WithMany("LabTestResultDetails")
-                        .HasForeignKey("TestSessionId")
+                    b.HasOne("MedMateAI.Domain.Entities.LabResult", "LabResult")
+                        .WithMany("LabResultDetails")
+                        .HasForeignKey("LabResultId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Indicator");
-
-                    b.Navigation("TestSession");
+                    b.Navigation("LabResult");
                 });
 
-            modelBuilder.Entity("MedMateAI.Domain.Entities.LabTestSession", b =>
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalRecord", b =>
                 {
                     b.HasOne("MedMateAI.Infrastructure.Identity.ApplicationUser", null)
-                        .WithMany("LabTestSessions")
+                        .WithMany("MedicalRecords")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("MedMateAI.Domain.Entities.MedicalVisit", "Visit")
+                        .WithMany("MedicalRecords")
+                        .HasForeignKey("VisitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Visit");
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalRecordFile", b =>
+                {
+                    b.HasOne("MedMateAI.Domain.Entities.MedicalRecord", "MedicalRecord")
+                        .WithMany("MedicalRecordFiles")
+                        .HasForeignKey("MedicalRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MedicalRecord");
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalVisit", b =>
+                {
+                    b.HasOne("MedMateAI.Domain.Entities.MedicalDepartment", "Department")
+                        .WithMany("MedicalVisits")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedMateAI.Domain.Entities.Doctor", "Doctor")
+                        .WithMany("MedicalVisits")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedMateAI.Domain.Entities.MedicalFacility", "Facility")
+                        .WithMany("MedicalVisits")
+                        .HasForeignKey("FacilityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedMateAI.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany("MedicalVisits")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Facility");
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicationScan", b =>
+                {
+                    b.HasOne("MedMateAI.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany("MedicationScans")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicationScanResult", b =>
+                {
+                    b.HasOne("MedMateAI.Domain.Entities.MedicationScan", "MedicationScan")
+                        .WithMany("MedicationScanResults")
+                        .HasForeignKey("MedicationScanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MedMateAI.Domain.Entities.Medicine", "Medicine")
+                        .WithMany("MedicationScanResults")
+                        .HasForeignKey("MedicineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MedicationScan");
+
+                    b.Navigation("Medicine");
                 });
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.Notification", b =>
@@ -2035,25 +2385,11 @@ namespace MedMateAI.Infrastructure.Migrations
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.RecoveryPlan", b =>
                 {
-                    b.HasOne("MedMateAI.Domain.Entities.SymptomAnalysisSession", "SymptomAnalysisSession")
-                        .WithMany("RecoveryPlans")
-                        .HasForeignKey("SymptomAnalysisSessionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("MedMateAI.Domain.Entities.LabTestSession", "TestSession")
-                        .WithMany("RecoveryPlans")
-                        .HasForeignKey("TestSessionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("MedMateAI.Domain.Entities.TreatmentJourney", "TreatmentJourney")
                         .WithMany("RecoveryPlans")
                         .HasForeignKey("TreatmentJourneyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("SymptomAnalysisSession");
-
-                    b.Navigation("TestSession");
 
                     b.Navigation("TreatmentJourney");
                 });
@@ -2079,25 +2415,18 @@ namespace MedMateAI.Infrastructure.Migrations
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.TreatmentJourney", b =>
                 {
-                    b.HasOne("MedMateAI.Domain.Entities.MedicalDepartment", "Department")
-                        .WithMany("TreatmentJourneys")
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("MedMateAI.Domain.Entities.MedicalFacility", "Facility")
-                        .WithMany("TreatmentJourneys")
-                        .HasForeignKey("FacilityId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("MedMateAI.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany("TreatmentJourneys")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Department");
+                    b.HasOne("MedMateAI.Domain.Entities.MedicalVisit", "Visit")
+                        .WithMany("TreatmentJourneys")
+                        .HasForeignKey("VisitId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("Facility");
+                    b.Navigation("Visit");
                 });
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.TreatmentLog", b =>
@@ -2113,6 +2442,12 @@ namespace MedMateAI.Infrastructure.Migrations
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.UserMedication", b =>
                 {
+                    b.HasOne("MedMateAI.Domain.Entities.Medicine", "Medicine")
+                        .WithMany("UserMedications")
+                        .HasForeignKey("MedicineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MedMateAI.Domain.Entities.TreatmentJourney", "TreatmentJourney")
                         .WithMany("UserMedications")
                         .HasForeignKey("TreatmentJourneyId")
@@ -2123,6 +2458,8 @@ namespace MedMateAI.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Medicine");
 
                     b.Navigation("TreatmentJourney");
                 });
@@ -2208,8 +2545,6 @@ namespace MedMateAI.Infrastructure.Migrations
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.ConsultationSession", b =>
                 {
-                    b.Navigation("AIAnalyses");
-
                     b.Navigation("AISystemConfigs");
 
                     b.Navigation("ConsultationQuestions");
@@ -2218,6 +2553,15 @@ namespace MedMateAI.Infrastructure.Migrations
             modelBuilder.Entity("MedMateAI.Domain.Entities.Doctor", b =>
                 {
                     b.Navigation("ConsultationSessions");
+
+                    b.Navigation("MedicalVisits");
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.DrugAnalysis", b =>
+                {
+                    b.Navigation("AISystemConfigs");
+
+                    b.Navigation("DrugAnalysisResults");
                 });
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.FacilityDepartment", b =>
@@ -2240,22 +2584,9 @@ namespace MedMateAI.Infrastructure.Migrations
                     b.Navigation("KnowledgeDocuments");
                 });
 
-            modelBuilder.Entity("MedMateAI.Domain.Entities.LabIndicatorMaster", b =>
+            modelBuilder.Entity("MedMateAI.Domain.Entities.LabResult", b =>
                 {
-                    b.Navigation("LabIndicatorAdviceCaches");
-
-                    b.Navigation("LabTestResultDetails");
-                });
-
-            modelBuilder.Entity("MedMateAI.Domain.Entities.LabTestSession", b =>
-                {
-                    b.Navigation("AIAnalyses");
-
-                    b.Navigation("AISystemConfigs");
-
-                    b.Navigation("LabTestResultDetails");
-
-                    b.Navigation("RecoveryPlans");
+                    b.Navigation("LabResultDetails");
                 });
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalDepartment", b =>
@@ -2266,7 +2597,7 @@ namespace MedMateAI.Infrastructure.Migrations
 
                     b.Navigation("FacilityDepartments");
 
-                    b.Navigation("TreatmentJourneys");
+                    b.Navigation("MedicalVisits");
                 });
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalFacility", b =>
@@ -2277,13 +2608,43 @@ namespace MedMateAI.Infrastructure.Migrations
 
                     b.Navigation("FeedbackReviews");
 
+                    b.Navigation("MedicalVisits");
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalRecord", b =>
+                {
+                    b.Navigation("LabResults");
+
+                    b.Navigation("MedicalRecordFiles");
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicalVisit", b =>
+                {
+                    b.Navigation("AISystemConfigs");
+
+                    b.Navigation("MedicalRecords");
+
                     b.Navigation("TreatmentJourneys");
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.MedicationScan", b =>
+                {
+                    b.Navigation("AISystemConfigs");
+
+                    b.Navigation("MedicationScanResults");
+                });
+
+            modelBuilder.Entity("MedMateAI.Domain.Entities.Medicine", b =>
+                {
+                    b.Navigation("DrugAnalysisResults");
+
+                    b.Navigation("MedicationScanResults");
+
+                    b.Navigation("UserMedications");
                 });
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.RecoveryPlan", b =>
                 {
-                    b.Navigation("AIAnalyses");
-
                     b.Navigation("AISystemConfigs");
 
                     b.Navigation("TreatmentLogs");
@@ -2296,15 +2657,11 @@ namespace MedMateAI.Infrastructure.Migrations
 
             modelBuilder.Entity("MedMateAI.Domain.Entities.SymptomAnalysisSession", b =>
                 {
-                    b.Navigation("AIAnalyses");
-
                     b.Navigation("AISystemConfigs");
 
                     b.Navigation("ConsultationSessions");
 
                     b.Navigation("DepartmentRecommendations");
-
-                    b.Navigation("RecoveryPlans");
 
                     b.Navigation("SessionSymptoms");
                 });
@@ -2312,6 +2669,10 @@ namespace MedMateAI.Infrastructure.Migrations
             modelBuilder.Entity("MedMateAI.Domain.Entities.TreatmentJourney", b =>
                 {
                     b.Navigation("AIAnalyses");
+
+                    b.Navigation("DrugAnalyses");
+
+                    b.Navigation("FollowUpReminders");
 
                     b.Navigation("RecoveryPlans");
 
@@ -2336,11 +2697,17 @@ namespace MedMateAI.Infrastructure.Migrations
 
                     b.Navigation("ConsultationSessions");
 
+                    b.Navigation("DrugAnalyses");
+
                     b.Navigation("FeedbackReviews");
 
                     b.Navigation("FollowUpReminders");
 
-                    b.Navigation("LabTestSessions");
+                    b.Navigation("MedicalRecords");
+
+                    b.Navigation("MedicalVisits");
+
+                    b.Navigation("MedicationScans");
 
                     b.Navigation("Notifications");
 

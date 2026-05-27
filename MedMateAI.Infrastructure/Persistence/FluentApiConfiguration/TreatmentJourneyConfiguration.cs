@@ -19,6 +19,16 @@ public sealed class TreatmentJourneyConfiguration : IEntityTypeConfiguration<Tre
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(x => x.Facility)
+            .WithMany(x => x.TreatmentJourneys)
+            .HasForeignKey(x => x.FacilityId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(x => x.Department)
+            .WithMany(x => x.TreatmentJourneys)
+            .HasForeignKey(x => x.DepartmentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasMany(x => x.RecoveryPlans)
             .WithOne(x => x.TreatmentJourney)
             .HasForeignKey(x => x.TreatmentJourneyId)
@@ -29,19 +39,9 @@ public sealed class TreatmentJourneyConfiguration : IEntityTypeConfiguration<Tre
             .HasForeignKey(x => x.TreatmentJourneyId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(x => x.DrugAnalyses)
-            .WithOne(x => x.TreatmentJourney)
-            .HasForeignKey(x => x.TreatmentJourneyId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasMany(x => x.UserMedications)
             .WithOne(x => x.TreatmentJourney)
             .HasForeignKey(x => x.TreatmentJourneyId)
             .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasMany(x => x.FollowUpReminders)
-            .WithOne(x => x.TreatmentJourney)
-            .HasForeignKey(x => x.TreatmentJourneyId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

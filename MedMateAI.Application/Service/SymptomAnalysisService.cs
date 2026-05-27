@@ -493,6 +493,7 @@ public sealed class SymptomAnalysisService : ISymptomAnalysisService
 {
    
     var lookup = new Dictionary<string, MedicalDepartment>(StringComparer.OrdinalIgnoreCase);
+    
     foreach (var department in departments)
     {
         var normalizedName = NormalizeDepartmentName(department.DepartmentName);

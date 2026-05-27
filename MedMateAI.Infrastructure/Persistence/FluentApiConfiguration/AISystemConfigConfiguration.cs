@@ -23,24 +23,14 @@ public sealed class AISystemConfigConfiguration : IEntityTypeConfiguration<AISys
             .HasForeignKey(x => x.SymptomAnalysisSessionId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasOne(x => x.MedicationScan)
-            .WithMany(x => x.AISystemConfigs)
-            .HasForeignKey(x => x.MedicationScanId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne(x => x.Visit)
-            .WithMany(x => x.AISystemConfigs)
-            .HasForeignKey(x => x.VisitId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         builder.HasOne(x => x.RecoveryPlan)
             .WithMany(x => x.AISystemConfigs)
             .HasForeignKey(x => x.RecoveryPlanId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasOne(x => x.DrugAnalysis)
+        builder.HasOne(x => x.TestSession)
             .WithMany(x => x.AISystemConfigs)
-            .HasForeignKey(x => x.DrugAnalysisId)
+            .HasForeignKey(x => x.TestSessionId)
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasOne(x => x.ConsultationSession)

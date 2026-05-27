@@ -19,19 +19,9 @@ public sealed class FeedbackReviewConfiguration : IEntityTypeConfiguration<Feedb
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(x => x.Visit)
-            .WithMany(x => x.FeedbackReviews)
-            .HasForeignKey(x => x.VisitId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasOne(x => x.Facility)
             .WithMany(x => x.FeedbackReviews)
             .HasForeignKey(x => x.FacilityId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Doctor)
-            .WithMany(x => x.FeedbackReviews)
-            .HasForeignKey(x => x.DoctorId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

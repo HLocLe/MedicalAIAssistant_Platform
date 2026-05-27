@@ -4,7 +4,7 @@ public sealed class UserMedication : BaseEntity
 {
     public Guid UserId { get; set; }
 
-    public Guid MedicineId { get; set; }
+    public string MedicineName { get; set; } = string.Empty;
 
     public Guid? TreatmentJourneyId { get; set; }
 
@@ -15,8 +15,6 @@ public sealed class UserMedication : BaseEntity
     public DateOnly? EndDate { get; set; }
 
     public string? Status { get; set; }
-
-    public Medicine Medicine { get; set; } = null!;
 
     public TreatmentJourney? TreatmentJourney { get; set; }
 }

@@ -14,5 +14,5 @@ public sealed class MedicalDepartment : BaseEntity
 
     public ICollection<ConsultationSession> ConsultationSessions { get; set; } = new List<ConsultationSession>();
 
-    public ICollection<MedicalVisit> MedicalVisits { get; set; } = new List<MedicalVisit>();
+    public ICollection<TreatmentJourney> TreatmentJourneys { get; set; } = new List<TreatmentJourney>();
 }

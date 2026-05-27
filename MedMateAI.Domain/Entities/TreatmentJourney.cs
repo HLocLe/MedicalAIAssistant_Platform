@@ -4,7 +4,9 @@ public sealed class TreatmentJourney : BaseEntity
 {
     public Guid UserId { get; set; }
 
-    public Guid? VisitId { get; set; }
+    public Guid? FacilityId { get; set; }
+
+    public Guid? DepartmentId { get; set; }
 
     public string? Title { get; set; }
 
@@ -16,15 +18,13 @@ public sealed class TreatmentJourney : BaseEntity
 
     public string? Status { get; set; }
 
-    public MedicalVisit? Visit { get; set; }
+    public MedicalFacility? Facility { get; set; }
+
+    public MedicalDepartment? Department { get; set; }
 
     public ICollection<RecoveryPlan> RecoveryPlans { get; set; } = new List<RecoveryPlan>();
 
     public ICollection<AIAnalysis> AIAnalyses { get; set; } = new List<AIAnalysis>();
 
-    public ICollection<DrugAnalysis> DrugAnalyses { get; set; } = new List<DrugAnalysis>();
-
     public ICollection<UserMedication> UserMedications { get; set; } = new List<UserMedication>();
-
-    public ICollection<FollowUpReminder> FollowUpReminders { get; set; } = new List<FollowUpReminder>();
 }

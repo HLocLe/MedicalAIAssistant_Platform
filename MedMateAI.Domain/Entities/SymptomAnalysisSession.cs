@@ -23,4 +23,8 @@ public sealed class SymptomAnalysisSession : BaseEntity
     public ICollection<ConsultationSession> ConsultationSessions { get; set; } = new List<ConsultationSession>();
 
     public ICollection<AISystemConfig> AISystemConfigs { get; set; } = new List<AISystemConfig>();
+
+    public ICollection<AIAnalysis> AIAnalyses { get; set; } = new List<AIAnalysis>();
+
+    public ICollection<RecoveryPlan> RecoveryPlans { get; set; } = new List<RecoveryPlan>();
 }

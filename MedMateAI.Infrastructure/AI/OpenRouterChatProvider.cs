@@ -123,7 +123,7 @@ public sealed class OpenRouterChatProvider : IAIChatProvider
         {
             response = JsonSerializer.Deserialize<OpenRouterResponse>(responseBody, ResponseJsonOptions);
       
-            //_logger.LogInformation(
+       //_logger.LogInformation(
       //"OpenRouter deserialized. Model: {Model}, Content: {Content}",
       //response?.Model,
       //response?.Choices?.FirstOrDefault()?.Message?.Content);

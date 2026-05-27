@@ -18,5 +18,25 @@ public sealed class AIAnalysisConfiguration : IEntityTypeConfiguration<AIAnalysi
             .WithMany(x => x.AIAnalyses)
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.RecoveryPlan)
+            .WithMany(x => x.AIAnalyses)
+            .HasForeignKey(x => x.RecoveryPlanId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(x => x.SymptomAnalysisSession)
+            .WithMany(x => x.AIAnalyses)
+            .HasForeignKey(x => x.SymptomAnalysisSessionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(x => x.TestSession)
+            .WithMany(x => x.AIAnalyses)
+            .HasForeignKey(x => x.TestSessionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(x => x.ConsultationSession)
+            .WithMany(x => x.AIAnalyses)
+            .HasForeignKey(x => x.ConsultationSessionId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

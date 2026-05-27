@@ -14,10 +14,5 @@ public sealed class TreatmentLogConfiguration : IEntityTypeConfiguration<Treatme
         builder.Property(x => x.Id).HasColumnName("TreatmentLogId").ValueGeneratedOnAdd();
 
         builder.Property(x => x.AiFeedbackNote).HasColumnName("AI_FeedbackNote");
-
-        builder.HasMany(x => x.FollowUpReminders)
-            .WithOne(x => x.TreatmentLog)
-            .HasForeignKey(x => x.TreatmentLogId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

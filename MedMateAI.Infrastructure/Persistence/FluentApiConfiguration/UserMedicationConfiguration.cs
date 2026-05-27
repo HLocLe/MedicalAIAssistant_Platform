@@ -14,14 +14,11 @@ public sealed class UserMedicationConfiguration : IEntityTypeConfiguration<UserM
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("UserMedicationId").ValueGeneratedOnAdd();
 
+        builder.Property(x => x.MedicineName).HasMaxLength(256).IsRequired();
+
         builder.HasOne<ApplicationUser>()
             .WithMany(x => x.UserMedications)
             .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Medicine)
-            .WithMany(x => x.UserMedications)
-            .HasForeignKey(x => x.MedicineId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
