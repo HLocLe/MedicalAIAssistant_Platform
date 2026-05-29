@@ -7,7 +7,7 @@ public interface IUnitOfWork : IAsyncDisposable
 {
     IMedicalFacilityRepository MedicalFacilities { get; }
     IDoctorRepository Doctors { get; }
-  
+    IFeedbackReviewRepository FeedbackReviews { get; }
 
     ISymptomAnalysisSessionRepository SymptomAnalysisSessions { get; }
 
