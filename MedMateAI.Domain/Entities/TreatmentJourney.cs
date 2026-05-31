@@ -8,6 +8,16 @@ public sealed class TreatmentJourney : BaseEntity
 
     public Guid? DepartmentId { get; set; }
 
+    public Guid? DoctorId { get; set; }
+
+    
+
+    public DateTime? ApprovedAt { get; set; }
+
+    public string? ApprovalStatus { get; set; }
+
+    public string? ApprovalNote { get; set; }
+
     public string? Title { get; set; }
 
     public string? DiagnosisSummary { get; set; }
@@ -21,6 +31,10 @@ public sealed class TreatmentJourney : BaseEntity
     public MedicalFacility? Facility { get; set; }
 
     public MedicalDepartment? Department { get; set; }
+
+    public Doctor? Doctor { get; set; }
+
+   
 
     public ICollection<RecoveryPlan> RecoveryPlans { get; set; } = new List<RecoveryPlan>();
 

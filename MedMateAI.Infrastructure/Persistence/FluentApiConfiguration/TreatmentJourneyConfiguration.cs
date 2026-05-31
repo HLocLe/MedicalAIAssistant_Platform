@@ -29,6 +29,15 @@ public sealed class TreatmentJourneyConfiguration : IEntityTypeConfiguration<Tre
             .HasForeignKey(x => x.DepartmentId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.Property(x => x.ApprovalStatus).HasMaxLength(50);
+
+        builder.HasOne(x => x.Doctor)
+            .WithMany(x => x.TreatmentJourneys)
+            .HasForeignKey(x => x.DoctorId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+      
+
         builder.HasMany(x => x.RecoveryPlans)
             .WithOne(x => x.TreatmentJourney)
             .HasForeignKey(x => x.TreatmentJourneyId)

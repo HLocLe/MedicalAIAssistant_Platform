@@ -21,4 +21,8 @@ public sealed class Doctor : BaseEntity
     public FacilityDepartment FacilityDepartment { get; set; } = null!;
 
     public ICollection<ConsultationSession> ConsultationSessions { get; set; } = new List<ConsultationSession>();
+
+    public ICollection<TreatmentJourney> TreatmentJourneys { get; set; } = new List<TreatmentJourney>();
+
+   
 }
