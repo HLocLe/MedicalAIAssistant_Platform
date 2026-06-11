@@ -5,6 +5,7 @@ using MedMateAI.Application.IService;
 using MedMateAI.Infrastructure.Identity;
 using MedMateAI.Domain.Persistence;
 using MedMateAI.Domain.Repository;
+using MedMateAI.Application.Options;
 using MedMateAI.Infrastructure.Auth.Options;
 using MedMateAI.Infrastructure.Auth.Providers;
 using MedMateAI.Infrastructure.Auth.Services;
@@ -13,6 +14,7 @@ using MedMateAI.Infrastructure.Mapping;
 using MedMateAI.Infrastructure.Persistence.Seeder;
 using MedMateAI.Infrastructure.Repositories;
 using MedMateAI.Infrastructure.Email.Brevo;
+using MedMateAI.Infrastructure.Email.Brevo.Options;
 using MedMateAI.Infrastructure.AI;
 using MedMateAI.Infrastructure.Payments.PayOS;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -48,6 +50,9 @@ public static class DependencyInjection
         services.AddScoped<IMedicalDepartmentService, MedicalDepartmentService>();
         services.AddScoped<IMedicalFacilityService, MedicalFacilityService>();
         services.AddScoped<IDoctorService, DoctorService>();
+        services.AddScoped<IDoctorInvitationService, DoctorInvitationService>();
+        services.AddScoped<IInvitationTokenService, InvitationTokenService>();
+        services.AddScoped<IDoctorAccountRegistrationService, DoctorAccountRegistrationService>();
         services.AddScoped<IFeedbackReviewService, FeedbackReviewService>();
         services.AddScoped<IPatientProfileService, PatientProfileService>();
         services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
@@ -59,6 +64,8 @@ public static class DependencyInjection
         services.AddScoped<IPaymentService, PaymentService>();
 
         services.Configure<PayOSOptions>(configuration.GetSection("PayOS"));
+        services.Configure<BrevoOptions>(configuration.GetSection(BrevoOptions.SectionName));
+        services.Configure<FrontendOptions>(configuration.GetSection(FrontendOptions.SectionName));
       
         
         //
@@ -76,6 +83,10 @@ public static class DependencyInjection
         services.AddHttpClient<IEmailOtpSender, BrevoEmailOtpService>(client =>
         {
             client.BaseAddress = new Uri("https://api.brevo.com/");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        services.AddHttpClient<IEmailSender, BrevoEmailSender>(client =>
+        {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
         services.AddHttpClient<IAIChatProvider, OpenRouterChatProvider>();

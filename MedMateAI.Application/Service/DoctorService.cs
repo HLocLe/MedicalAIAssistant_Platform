@@ -156,9 +156,9 @@ public sealed class DoctorService : IDoctorService
 
         var errors = new List<string>();
 
-        if (request.UserId == Guid.Empty)
+        if (request.UserId.HasValue && request.UserId.Value == Guid.Empty)
         {
-            errors.Add("UserId is required.");
+            errors.Add("UserId is invalid.");
         }
 
         if (request.FacilityDepartmentId == Guid.Empty)
@@ -205,6 +205,21 @@ public sealed class DoctorService : IDoctorService
             if (hasDuplicate)
             {
                 errors.Add("Doctor with same full name already exists in this facility department.");
+            }
+        }
+
+        if (errors.Count == 0 && request.UserId.HasValue)
+        {
+            var existingDoctorForUser = await _unitOfWork.Doctors.FirstOrDefaultAsync(
+                x =>
+                    !x.IsDeleted
+                    && x.UserId == request.UserId.Value,
+                asNoTracking: true,
+                cancellationToken: cancellationToken);
+
+            if (existingDoctorForUser is not null)
+            {
+                errors.Add("This user account is already linked to a doctor profile.");
             }
         }
 

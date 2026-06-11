@@ -11,6 +11,7 @@ public sealed class UnitOfWork : IUnitOfWork
     private readonly ApplicationDbContext _context;
     private IMedicalFacilityRepository? _medicalFacilities;
     private IDoctorRepository? _doctors;
+    private IDoctorInvitationRepository? _doctorInvitations;
     private IFeedbackReviewRepository? _feedbackReviews;
     private IGenericRepository<SubscriptionPlan>? _subscriptionPlans;
     private IUserSubscriptionRepository? _userSubscriptions;
@@ -33,6 +34,9 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public IDoctorRepository Doctors =>
         _doctors ??= new DoctorRepository(_context);
+
+    public IDoctorInvitationRepository DoctorInvitations =>
+        _doctorInvitations ??= new DoctorInvitationRepository(_context);
 
     public IFeedbackReviewRepository FeedbackReviews =>
         _feedbackReviews ??= new FeedbackReviewRepository(_context);
