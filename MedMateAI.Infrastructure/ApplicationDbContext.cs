@@ -31,6 +31,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
     public DbSet<Doctor> Doctors => Set<Doctor>();
 
+    public DbSet<DoctorInvitation> DoctorInvitations => Set<DoctorInvitation>();
+
     public DbSet<FeedbackReview> FeedbackReviews => Set<FeedbackReview>();
 
     public DbSet<LabTestSession> LabTestSessions => Set<LabTestSession>();

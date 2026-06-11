@@ -15,14 +15,15 @@ public sealed class DoctorConfiguration : IEntityTypeConfiguration<Doctor>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("DoctorId").ValueGeneratedOnAdd();
 
-        builder.Property(x => x.UserId).IsRequired();
+        builder.Property(x => x.UserId)
+            .IsRequired(false);
 
         builder.HasIndex(x => x.UserId).IsUnique();
 
         builder.HasOne<ApplicationUser>()
             .WithOne(x => x.Doctor)
             .HasForeignKey<Doctor>(x => x.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Property(x => x.DepartmentRole)
             .HasConversion<int>()
