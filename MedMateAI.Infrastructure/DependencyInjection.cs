@@ -80,15 +80,12 @@ public static class DependencyInjection
         });
 
         //
-        services.AddHttpClient<IEmailOtpSender, BrevoEmailOtpService>(client =>
-        {
-            client.BaseAddress = new Uri("https://api.brevo.com/");
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-        services.AddHttpClient<IEmailSender, BrevoEmailSender>(client =>
+        services.AddHttpClient<BrevoEmailSender>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+        services.AddScoped<IEmailSender>(sp => sp.GetRequiredService<BrevoEmailSender>());
+        services.AddScoped<IEmailOtpSender>(sp => sp.GetRequiredService<BrevoEmailSender>());
         services.AddHttpClient<IAIChatProvider, OpenRouterChatProvider>();
 
         // 

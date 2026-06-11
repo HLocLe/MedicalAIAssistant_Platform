@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MedMateAI.Application.IService;
+using MedMateAI.Infrastructure.Auth.Providers;
 using MedMateAI.Infrastructure.Email.Brevo.Models;
 using MedMateAI.Infrastructure.Email.Brevo.Options;
 using Microsoft.Extensions.Logging;
@@ -10,8 +11,10 @@ using Microsoft.Extensions.Options;
 
 namespace MedMateAI.Infrastructure.Email.Brevo;
 
-public sealed class BrevoEmailSender : IEmailSender
+public sealed class BrevoEmailSender : IEmailSender, IEmailOtpSender
 {
+    private const string OtpEmailSubject = "Mã OTP xác thực tài khoản";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = null,
@@ -30,6 +33,30 @@ public sealed class BrevoEmailSender : IEmailSender
         _httpClient = httpClient;
         _options = options.Value;
         _logger = logger;
+    }
+
+    public async Task<(bool Success, string? OtpCode)> SendOtpEmailAsync(
+        string toEmail,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(toEmail))
+        {
+            return (false, null);
+        }
+
+        var otpCode = OtpCodeGenerator.CreateNumeric(6);
+        var htmlContent = BuildOtpEmailHtml(otpCode);
+
+        try
+        {
+            await SendAsync(toEmail, OtpEmailSubject, htmlContent, cancellationToken);
+            return (true, otpCode);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Brevo SMTP API request failed.");
+            return (false, null);
+        }
     }
 
     public async Task SendAsync(
@@ -72,7 +99,7 @@ public sealed class BrevoEmailSender : IEmailSender
         request.Headers.TryAddWithoutValidation("api-key", _options.ApiKey.Trim());
         request.Content = JsonContent.Create(payload, options: JsonOptions);
 
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var response = await SendBrevoRequestAsync(request, cancellationToken);
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (response.IsSuccessStatusCode)
@@ -87,6 +114,33 @@ public sealed class BrevoEmailSender : IEmailSender
 
         throw new InvalidOperationException(
             $"Brevo SMTP API failed with status code {(int)response.StatusCode}.");
+    }
+
+    private async Task<HttpResponseMessage> SendBrevoRequestAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _httpClient.SendAsync(request, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "Brevo SMTP API request failed.");
+            throw;
+        }
+    }
+
+    private static string BuildOtpEmailHtml(string otpCode)
+    {
+        return
+            $"""
+            <div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee;'>
+                <h2>Xác thực tài khoản</h2>
+                <p>Mã OTP của bạn là: <strong style='font-size: 24px; color: #2d89ef;'>{otpCode}</strong></p>
+                <p>Mã này sẽ hết hạn sau 1 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+            </div>
+            """;
     }
 
     private void ValidateOptions()
